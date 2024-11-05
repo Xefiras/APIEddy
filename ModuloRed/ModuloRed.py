@@ -53,7 +53,33 @@ class ModuloRed:
                     "Signal Level": signal_level_red,
                     "Security": security_red
                 })
-
-
-
         return lista_redes_wifi
+
+    # Método para conectar a una red wifi
+    # Recibe el SSID y la contraseña de la red wifi
+    # y modifica el archivo de configuración de la red wpa_supplicant.conf
+    # Regresa una tupla con un boolean que representa
+    # el exito de la función y un mensaje
+    @staticmethod
+    def conectar_red_wifi(ssid, password):
+        try:
+            if ModuloRed.verificar_red_existente(ssid):
+                return False, "La red ya existe en el archivo de configuración"
+            red = f'network={{\n\tssid="{ssid}"\n\tpsk="{password}\n\tkey_mgmt=WPA-PSK\n}}\n"'
+            with open("/etc/wpa_supplicant/wpa_supplicant.conf", "a") as file:
+                file.write(red)
+
+            os.system("systemctl restart wpa_supplicant") # Chance pida permisos
+            return True, "Conexión exitosa"
+
+        except Exception as e:
+            return False, str(e)
+
+
+    # Método para verificar si la red a agregar ya existe en el archivo wpa_supplicant.conf
+    # Recibe el SSID de la red
+    # Regresa un boolean que representa si la red ya existe o no
+    @staticmethod
+    def verificar_red_existente(ssid):
+        with open("/etc/wpa_supplicant/wpa_supplicant.conf", "r") as file:
+            return ssid in file.read()
