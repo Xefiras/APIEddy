@@ -1,12 +1,23 @@
 # Clase encargada de la gestión de las redes wifi y
 # red móvil del módulo Eddy
 
-import os
 import re
+import subprocess
+
 
 class ModuloRed:
     def __init__(self, modo_conexion):
         self.modo_conexion = modo_conexion
+        self.interfaz_red = self.get_interfaz_red()
+
+    @staticmethod
+    def get_interfaz_red():
+        try:
+            interfaz_cmd = subprocess.run(['iwgetid'], capture_output = True, text = True)
+            interfaz = interfaz_cmd.stdout.split(' ')
+            return interfaz[0]
+        except Exception as e:
+            return False, str(e)
 
     # Método para listar las redes wifi
     # que el módulo puede detectar
@@ -15,12 +26,12 @@ class ModuloRed:
     # un boolean que representa el exito
     # de la funcion y una lista con las redes wifi incluyen su SSID,
     # la intensidad de la señal, y la seguridad
-    @staticmethod
-    def listar_redes_wifi():
+    def listar_redes_wifi(self):
         try:
-            redes_wifi = os.popen("iwlist wlp1s0 scan").read()
-            lista_redes_wifi = ModuloRed.extraer_datos_redes_wifi(redes_wifi)
-            return True, lista_redes_wifi
+            redes_wifi_cmd = subprocess.run(['iwlist', self.interfaz_red, 'scan'], capture_output=True, text=True)
+            redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout)
+
+            return True, redes_wifi
         except Exception as e:
             return False, str(e)
 
@@ -69,7 +80,7 @@ class ModuloRed:
             with open("/etc/wpa_supplicant/wpa_supplicant.conf", "a") as file:
                 file.write(red)
 
-            os.system("systemctl restart wpa_supplicant") # Chance pida permisos
+            subprocess.run(['systemctl', 'restart', 'wpa_supplicant'])
             return True, "Conexión exitosa"
 
         except Exception as e:

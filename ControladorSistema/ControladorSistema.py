@@ -1,6 +1,7 @@
 # Clase que controla las operaciones de prendido
 # y apagado del módulo Eddy (Raspberry Pi)
-import os
+import subprocess
+
 
 class ControladorSistema:
     def __init__(self):
@@ -13,7 +14,7 @@ class ControladorSistema:
     @staticmethod
     def apagar_sistema():
         try:
-            os.system("shutdown -h now")
+            subprocess.run(['shutdown', '-h', 'now'])
             print("Apagando el módulo Eddy...")
             return True, "Apagando el módulo Eddy..."
         except Exception as e:
