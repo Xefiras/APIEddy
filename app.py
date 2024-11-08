@@ -18,7 +18,7 @@ async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
 # Endpoint to shut down the raspberry pi
-@app.post("/shutdown")
+@app.get("/shutdown")
 async def shutdown():
     estado, mensaje = ControladorSistema.apagar_sistema()
     if estado:

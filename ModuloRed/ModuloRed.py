@@ -80,4 +80,3 @@ class ModuloRed:
         with open("/etc/wpa_supplicant/wpa_supplicant.conf", "r") as file:
             return ssid in file.read()
 
-
