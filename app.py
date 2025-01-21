@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 import uvicorn as uv
 
 from ControladorSistema.ControladorSistema import ControladorSistema
@@ -34,31 +35,21 @@ async def shutdown():
 
 @app.get("/wifi-list")
 async def wifi_list():
-    estado, mensaje = ModuloRed.listar_redes_wifi()
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
-        return {
-            "status": "error",
-            "message": mensaje
-        }
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    estado, mensaje = modulo_red.listar_redes_wifi()
+    return {"estado": estado, "mensaje": mensaje}
+
+class WifiConnectionRequest(BaseModel):
+    ssid: str
+    password: str
 
 @app.post("/wifi-connection")
-async def wifi_connection(ssid: str, password: str):
-    estado, mensaje = ModuloRed.conectar_red_wifi(ssid, password)
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
-        return {
-            "status": "error",
-            "message": mensaje
-        }
+async def wifi_connection(request: WifiConnectionRequest):
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    ssid = request.ssid
+    password = request.password
+    estado, mensaje = modulo_red.conectar_red_wifi(ssid, password)
+    return {"estado": estado, "mensaje": mensaje}
 
 @app.post("/apn-configuration")
 async def apn_configuration(nombre_apn: str, apn: str, nombre_usuario: str,
