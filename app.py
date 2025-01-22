@@ -33,11 +33,21 @@ async def shutdown():
             "message": mensaje
         }
 
-@app.get("/wifi-list")
-async def wifi_list():
+#Para manejar las conexiones wifi
+@app.get("/wifi-scan")
+async def wifi_scan():
     modulo_red = ModuloRed(modo_conexion="wifi")
-    estado, mensaje = modulo_red.listar_redes_wifi()
+    estado, mensaje = modulo_red.escanear_redes_wifi()
     return {"estado": estado, "mensaje": mensaje}
+
+@app.get("/wifi-list")
+async def wifi_list_existente():
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    estado, redes_wifi = modulo_red.listar_redes_wifi()
+    if estado:
+        return {"status": "success", "networks": redes_wifi}
+    else:
+        return {"status": "error", "message": redes_wifi}
 
 class WifiConnectionRequest(BaseModel):
     ssid: str
@@ -49,6 +59,16 @@ async def wifi_connection(request: WifiConnectionRequest):
     ssid = request.ssid
     password = request.password
     estado, mensaje = modulo_red.conectar_red_wifi(ssid, password)
+    return {"estado": estado, "mensaje": mensaje}
+
+# Definir un modelo Pydantic para recibir el parámetro como JSON
+class NetworkRequest(BaseModel):
+    network_id: str
+
+@app.post("/delete-network")
+async def eliminar_red(request: NetworkRequest):
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    estado, mensaje = modulo_red.eliminar_red_wifi(request.network_id)
     return {"estado": estado, "mensaje": mensaje}
 
 @app.post("/apn-configuration")

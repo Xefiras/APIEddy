@@ -10,21 +10,50 @@ class ModuloRed:
     @staticmethod
     def get_interfaz_red():
             return "wlan1"
-
-    def listar_redes_wifi(self):
+    
+    def escanear_redes_wifi(self):
         try:
-            # Usar wlan1 explícitamente para listar redes Wi-Fi
+            # Usar wlan1 explícitamente para escanear redes Wi-Fi
             redes_wifi_cmd = subprocess.run(
                 ['nmcli', '-t', '-f', 'SSID,SIGNAL,SECURITY', 'device', 'wifi', 'list', 'ifname', self.interfaz_red],
                 capture_output=True, text=True
             )
             if redes_wifi_cmd.returncode != 0:
-                return False, f"Error al listar redes Wi-Fi: {redes_wifi_cmd.stderr.strip()}"
+                return False, f"Error al escanear redes Wi-Fi: {redes_wifi_cmd.stderr.strip()}"
             
             redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout)
             return True, redes_wifi
 
         except Exception as e:
+            return False, str(e)
+
+    def listar_redes_wifi(self):
+        try:
+            # Ejecutar el comando usando subprocess
+            result = subprocess.check_output(['sudo', 'wpa_cli', '-i', self.interfaz_red, 'list_networks'])
+            # Decodificar el resultado y dividir en líneas
+            result = result.decode('utf-8').splitlines()
+
+            # Eliminar la primera línea que contiene los encabezados
+            result = result[1:]
+
+            # Crear una lista de redes, formateando cada línea
+            redes_wifi = []
+            for linea in result:
+                # Separar por tabulaciones
+                partes = linea.split('\t')
+                if len(partes) >= 4:
+                    # Extraer los valores
+                    red = {
+                        "network_id": partes[0],
+                        "ssid": partes[1],
+                        "bssid": partes[2] if len(partes) > 2 else "any",  # Si no hay BSSID, poner "any"
+                        "flags": partes[3]
+                    }
+                    redes_wifi.append(red)
+
+            return True, redes_wifi
+        except subprocess.CalledProcessError as e:
             return False, str(e)
 
     @staticmethod
@@ -81,8 +110,8 @@ class ModuloRed:
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
             # Guardar la configuración
-            print("Guardando Configuración")
-            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "save_config"], check=True)
+            #print("Guardando Configuración")
+            #subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "save_config"], check=True)
 
             return True, "Conexión exitosa"
 
@@ -100,3 +129,19 @@ class ModuloRed:
             return False
         except Exception as e:
             return False
+    
+    def eliminar_red_wifi(self, network_id):
+            try:
+                # Ejecutar el comando para eliminar la red Wi-Fi
+                result = subprocess.run(
+                    ["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", network_id],
+                    capture_output=True, text=True
+                )
+
+                if result.returncode != 0:
+                    return False, f"Error al eliminar la red: {result.stderr.strip()}"
+
+                return True, f"Red con ID {network_id} eliminada exitosamente"
+
+            except Exception as e:
+                return False, str(e)
