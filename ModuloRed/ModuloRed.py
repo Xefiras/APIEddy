@@ -120,15 +120,22 @@ class ModuloRed:
         except Exception as e:
             return False, str(e)
 
-    @staticmethod
-    def verificar_red_existente(ssid):
+    # Método para conectar a una red Wi-Fi por su ID
+    def conectar_a_red_wifi_existente(self, network_id):
         try:
-            with open("/etc/wpa_supplicant/wpa_supplicant.conf", "r") as file:
-                return ssid in file.read()
-        except FileNotFoundError:
-            return False
+            # Ejecutar el comando para seleccionar la red Wi-Fi
+            result = subprocess.run(
+                ["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", network_id],
+                capture_output=True, text=True
+            )
+
+            if result.returncode != 0:
+                return False, f"Error al conectar a la red: {result.stderr.strip()}"
+
+            return True, f"Conexión exitosa a la red con ID {network_id}"
+
         except Exception as e:
-            return False
+            return False, str(e)
     
     def eliminar_red_wifi(self, network_id):
             try:
