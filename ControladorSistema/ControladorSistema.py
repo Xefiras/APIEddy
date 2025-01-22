@@ -19,3 +19,12 @@ class ControladorSistema:
             return True, "Apagando el módulo Eddy..."
         except Exception as e:
             return False, str(e)
+
+    @staticmethod
+    def reiniciar_sistema():
+        try:
+            subprocess.run(['reboot', '-h', 'now'])
+            print("Reiniciando el módulo Eddy...")
+            return True, "Reiniciando el módulo Eddy..."
+        except Exception as e:
+            return False, str(e)  

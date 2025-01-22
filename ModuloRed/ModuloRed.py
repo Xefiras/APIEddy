@@ -1,4 +1,6 @@
 import subprocess
+import os
+import json
 from ModuloRed.Red import Red
 
 
@@ -152,3 +154,99 @@ class ModuloRed:
 
             except Exception as e:
                 return False, str(e)
+            
+    @staticmethod
+    def obtener_info_ap():
+        try:
+            # Comando curl como una lista
+            curl_command = [
+                "curl", "-X", "GET",
+                "http://10.3.141.1:8081/ap",
+                "-H", "accept: application/json",
+                "-H", "access_token: x7yszknswp1ecqzusoqcoovy6kfhj5ro"
+            ]
+            
+            # Ejecutar el comando y capturar la salida
+            result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            if result.returncode == 0:
+                # Convertir la salida a JSON si es posible
+                try:
+                    response_data = json.loads(result.stdout)
+                except json.JSONDecodeError:
+                    response_data = result.stdout  # Si no es JSON, devolver como texto
+                return True, response_data
+            else:
+                return False, result.stderr
+        except Exception as e:
+            return False, str(e)
+        
+    @staticmethod
+    def obtener_clientes_conectados():
+        try:
+            # Comando curl como una lista
+            curl_command = [
+                "curl", "-X", "GET",
+                "http://10.3.141.1:8081/clients/wlan0",
+                "-H", "accept: application/json",
+                "-H", "access_token: x7yszknswp1ecqzusoqcoovy6kfhj5ro"
+            ]
+            
+            # Ejecutar el comando y capturar la salida
+            result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            if result.returncode == 0:
+                # Convertir la salida a JSON si es posible
+                try:
+                    response_data = json.loads(result.stdout)
+                except json.JSONDecodeError:
+                    response_data = result.stdout  # Si no es JSON, devolver como texto
+                return True, response_data
+            else:
+                return False, result.stderr
+        except Exception as e:
+            return False, str(e)
+        
+    #Método para modificar la configuración del hotspot, donde al final se debe reiniciar el servicio para aplicar los cambios
+    @staticmethod
+    def editar_hostapd(ssid: str, wpa_passphrase: str):
+        try:
+            # Ruta del archivo hostapd.conf
+            hostapd_conf_path = "/etc/hostapd/hostapd.conf"
+
+            # Comprobar si el archivo existe
+            if not os.path.exists(hostapd_conf_path):
+                return False, f"El archivo {hostapd_conf_path} no se encuentra."
+
+            # Leer el contenido del archivo
+            with open(hostapd_conf_path, 'r') as f:
+                lines = f.readlines()
+
+            # Modificar las líneas correspondientes
+            updated = False
+            for i, line in enumerate(lines):
+                if line.startswith("ssid="):
+                    lines[i] = f"ssid={ssid}\n"
+                    updated = True
+                elif line.startswith("wpa_passphrase="):
+                    lines[i] = f"wpa_passphrase={wpa_passphrase}\n"
+                    updated = True
+
+            if not updated:
+                return False, "No se encontraron las líneas ssid o wpa_passphrase en el archivo."
+
+            # Guardar los cambios en el archivo
+            with open(hostapd_conf_path, 'w') as f:
+                f.writelines(lines)
+
+            # Reiniciar el servicio hostapd para aplicar los cambios
+            restart_command = ["systemctl", "restart", "hostapd"]
+            result = subprocess.run(restart_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            if result.returncode != 0:
+                return False, f"Error al reiniciar el servicio hostapd: {result.stderr}"
+
+            return True, "Archivo hostapd.conf actualizado correctamente."
+
+        except Exception as e:
+            return False, f"Error al editar el archivo: {str(e)}"

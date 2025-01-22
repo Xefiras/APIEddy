@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from pydantic import BaseModel
 import uvicorn as uv
 
@@ -18,7 +18,7 @@ async def root():
 async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
-# Endpoint to shut down the raspberry pi
+# Endpoint to shutdown the raspberry pi
 @app.get("/shutdown")
 async def shutdown():
     estado, mensaje = ControladorSistema.apagar_sistema()
@@ -32,8 +32,23 @@ async def shutdown():
             "status": "error",
             "message": mensaje
         }
+    
+# Endpoint to reboot the raspberry pi
+@app.get("/reboot")
+async def reboot():
+    estado, mensaje = ControladorSistema.reiniciar_sistema()
+    if estado:
+        return {
+            "status": "success",
+            "message": mensaje
+        }
+    else:
+        return {
+            "status": "error",
+            "message": mensaje
+        }
 
-#Para manejar las conexiones wifi
+'''Para manejar las conexiones wifi'''
 @app.get("/wifi-scan")
 async def wifi_scan():
     modulo_red = ModuloRed(modo_conexion="wifi")
@@ -83,6 +98,59 @@ async def eliminar_red(request: NetworkRequest):
     estado, mensaje = modulo_red.eliminar_red_wifi(request.network_id)
     return {"estado": estado, "mensaje": mensaje}
 
+'''Para manejar el hotspot'''
+#Endpoint para recuperar la información del hotspot
+@app.get("/access-point")
+async def access_point_info():
+    # Crear el objeto de ModuloRed y llamar al método ejecutar_curl
+    estado, respuesta = ModuloRed.obtener_info_ap()
+    
+    if estado:
+        return {
+            "status": "success",
+            "response": respuesta
+        }
+    else:
+        return {
+            "status": "error",
+            "message": respuesta
+        }
+    
+#Endpoint para conocer que clientes están conectados al AP
+@app.get("/connected-clients")
+async def connected_clients_info():
+    # Crear el objeto de ModuloRed y llamar al método ejecutar_curl
+    estado, respuesta = ModuloRed.obtener_clientes_conectados()
+    
+    if estado:
+        return {
+            "status": "success",
+            "response": respuesta
+        }
+    else:
+        return {
+            "status": "error",
+            "message": respuesta
+        }
+# Endpoint para cambiar la configuración del hotspot
+@app.post("/update-hostapd-configuration")
+async def update_hostapd_configuration(
+    ssid: str = Body(...), 
+    wpa_passphrase: str = Body(...)
+):
+    estado, mensaje = ModuloRed.editar_hostapd(ssid, wpa_passphrase)
+    if estado:
+        return {
+            "status": "success",
+            "message": mensaje
+        }
+    else:
+        return {
+            "status": "error",
+            "message": mensaje
+        }
+    
+'''Para manejar el módem GSM'''
 @app.post("/apn-configuration")
 async def apn_configuration(nombre_apn: str, apn: str, nombre_usuario: str,
                                                     contrasena: str, tipo_apn: str,
