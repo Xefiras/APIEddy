@@ -151,6 +151,7 @@ async def update_hostapd_configuration(
         }
     
 '''Para manejar el módem GSM'''
+
 @app.post("/apn-configuration")
 async def apn_configuration(nombre_apn: str, apn: str, nombre_usuario: str,
                                                     contrasena: str, tipo_apn: str,
@@ -158,6 +159,21 @@ async def apn_configuration(nombre_apn: str, apn: str, nombre_usuario: str,
     apn = APN(nombre_apn, apn, nombre_usuario, contrasena, tipo_apn, mcc, mnc)
     sim = SIM(apn)
     estado, mensaje = sim.cambiar_configuracion_apn()
+    if estado:
+        return {
+            "status": "success",
+            "message": mensaje
+        }
+    else:
+        return {
+            "status": "error",
+            "message": mensaje
+        }
+    
+# Endpoint para inicializar la conexión PPP y manejar la interfaz wlan1
+@app.post("/toggle-ppp-connection")
+async def toggle_ppp_connection():
+    estado, mensaje = ModuloRed.toggle_ppp_connection()
     if estado:
         return {
             "status": "success",

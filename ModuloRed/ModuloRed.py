@@ -1,6 +1,6 @@
 import subprocess
-import os
 import json
+import os
 from ModuloRed.Red import Red
 
 
@@ -250,3 +250,48 @@ class ModuloRed:
 
         except Exception as e:
             return False, f"Error al editar el archivo: {str(e)}"
+        
+    #Método para cambiar de modo de conexión, con wvdial (ppp) o Wi-Fi (wlan1)        
+    @staticmethod
+    def toggle_ppp_connection():
+        try:
+            # Verificar si el proceso wvdial está en ejecución
+            wvdial_running = subprocess.run(
+                ["pgrep", "wvdial"], capture_output=True, text=True
+            ).returncode == 0
+            
+            # Ruta donde se guardará el log de la salida de wvdial
+            log_file_path = os.path.join(os.getcwd(), "wvdial_output.log")
+
+            if wvdial_running:
+                # Si wvdial está en ejecución, detenerlo y habilitar wlan1
+                print("Deteniendo wvdial y habilitando wlan1...")
+                subprocess.run(["sudo", "poff.wvdial",], check=True)
+                subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
+                
+                print("Conexión PPP detenida y wlan1 habilitada.")
+                return True, "Conexión PPP detenida y wlan1 habilitada."
+            else:
+                # Si wvdial no está en ejecución, iniciar la conexión PPP en segundo plano
+                print("Deshabilitando wlan1 y ejecutando wvdial en segundo plano...")
+
+                subprocess.run(["sudo", "ip", "link", "set", "wlan1", "down"], check=True)
+
+                # Ejecutar wvdial en segundo plano, sin bloquear el servidor
+                with open(log_file_path, "w") as log_file:
+                    process = subprocess.Popen(
+                        ["sudo", "wvdial"],
+                        stdout=log_file,  # Redirigir stdout a un archivo
+                        stderr=log_file,  # Redirigir stderr a un archivo
+                        text=True
+                    )
+                    
+                print(f"Conexión PPP iniciada en segundo plano y wlan1 deshabilitada. La salida de wvdial se guarda en {log_file_path}")
+                return True, f"Conexión PPP iniciada en segundo plano y wlan1 deshabilitada. La salida de wvdial se guarda en {log_file_path}."
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error en la ejecución del comando: {str(e)}")
+            return False, f"Error en la ejecución del comando: {str(e)}"
+        except Exception as e:
+            print(f"Error desconocido: {str(e)}")
+            return False, f"Error desconocido: {str(e)}"
