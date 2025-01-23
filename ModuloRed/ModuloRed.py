@@ -1,10 +1,14 @@
 import subprocess
 import json
 import os
+import time
 from ModuloRed.Red import Red
 
 
 class ModuloRed:
+
+    LOG_FILE_PATH = os.path.join(os.getcwd(), "wvdial_output.log")
+
     def __init__(self, modo_conexion):
         self.modo_conexion = modo_conexion
         self.interfaz_red = self.get_interfaz_red()
@@ -261,33 +265,54 @@ class ModuloRed:
             ).returncode == 0
             
             # Ruta donde se guardará el log de la salida de wvdial
-            log_file_path = os.path.join(os.getcwd(), "wvdial_output.log")
+            log_file = os.path.join(os.getcwd(), "wvdial_output.log")
 
             if wvdial_running:
                 # Si wvdial está en ejecución, detenerlo y habilitar wlan1
                 print("Deteniendo wvdial y habilitando wlan1...")
-                subprocess.run(["sudo", "poff.wvdial",], check=True)
-                subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
+                subprocess.Popen(["sudo", "poff.wvdial"])
                 
+                
+                #subprocess.run(["sudo", "poff.wvdial"], check=True)
+                subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
+                time.sleep(7)
                 print("Conexión PPP detenida y wlan1 habilitada.")
                 return True, "Conexión PPP detenida y wlan1 habilitada."
             else:
                 # Si wvdial no está en ejecución, iniciar la conexión PPP en segundo plano
                 print("Deshabilitando wlan1 y ejecutando wvdial en segundo plano...")
-
+                                    
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "down"], check=True)
 
-                # Ejecutar wvdial en segundo plano, sin bloquear el servidor
-                with open(log_file_path, "w") as log_file:
-                    process = subprocess.Popen(
-                        ["sudo", "wvdial"],
-                        stdout=log_file,  # Redirigir stdout a un archivo
-                        stderr=log_file,  # Redirigir stderr a un archivo
-                        text=True
-                    )
+                while True:
+                    # Ejecutar wvdial y guardar salida en log
+                    with open(ModuloRed.LOG_FILE_PATH, "w") as log_file:
+                        process = subprocess.Popen(
+                            ["sudo", "wvdial"],
+                            stdout=log_file,
+                            stderr=log_file,
+                            text=True
+                        )
+
+                    # Medir tiempo de ejecución
+                    start_time = time.time()
+                    while process.poll() is None:  # Mientras el proceso no termine
+                        elapsed_time = time.time() - start_time
+                        if elapsed_time > 15:  # Si pasa más de 15 segundos, considerar que está funcionando
+                            print("Conexión PPP establecida correctamente.")
+                            return True, "Conexión PPP establecida correctamente."
+                        time.sleep(1)  # Esperar un momento antes de verificar nuevamente
                     
-                print(f"Conexión PPP iniciada en segundo plano y wlan1 deshabilitada. La salida de wvdial se guarda en {log_file_path}")
-                return True, f"Conexión PPP iniciada en segundo plano y wlan1 deshabilitada. La salida de wvdial se guarda en {log_file_path}."
+                    # Si el proceso termina antes de los 15 segundos, leer el log
+                    with open(ModuloRed.LOG_FILE_PATH, "r") as log_file:
+                        log_content = log_file.read()
+
+                    if "--> Modem not responding." in log_content:
+                        print("El módem no respondió. Intentando nuevamente...")
+                        time.sleep(5)  # Esperar antes de reintentar
+                    else:
+                        print("Conexión PPP establecida correctamente.")
+                        return True, "Conexión PPP establecida correctamente."
 
         except subprocess.CalledProcessError as e:
             print(f"Error en la ejecución del comando: {str(e)}")
