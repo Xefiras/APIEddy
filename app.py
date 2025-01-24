@@ -4,8 +4,6 @@ import uvicorn as uv
 
 from ControladorSistema.ControladorSistema import ControladorSistema
 from ModuloRed.ModuloRed import ModuloRed
-from SIM.SIM import SIM
-from SIM.APN import APN
 
 app = FastAPI()
 
