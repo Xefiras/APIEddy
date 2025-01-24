@@ -404,7 +404,7 @@ class ModuloRed:
             return False, f"Error al obtener la señal de {interface}: {str(e)}"
 
 
-
+    #Metodo para obtener la señal del sim7600x por medio del comando AT+CSQ (debe correrse antes de ejecutar el wvdial/ppp)
     @staticmethod
     def get_sim7600_signal_strength(port="/dev/ttyUSB2", baudrate=115200):
         """
