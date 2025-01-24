@@ -320,3 +320,42 @@ class ModuloRed:
         except Exception as e:
             print(f"Error desconocido: {str(e)}")
             return False, f"Error desconocido: {str(e)}"
+    
+    @staticmethod
+    def editar_wvdial(apn: str, username: str, password: str):
+        try:
+            # Ruta del archivo wvdial.conf
+            wvdial_conf_path = "/etc/wvdial.conf"
+
+            # Comprobar si el archivo existe
+            if not os.path.exists(wvdial_conf_path):
+                return False, f"El archivo {wvdial_conf_path} no se encuentra."
+
+            # Leer el contenido del archivo
+            with open(wvdial_conf_path, 'r') as f:
+                lines = f.readlines()
+
+            # Modificar las líneas correspondientes
+            updated = False
+            for i, line in enumerate(lines):
+                if line.startswith("Init3 ="):
+                    lines[i] = f'Init3 = AT+CGDCONT=1,"IP","{apn}"\n'
+                    updated = True
+                elif line.startswith("Username ="):
+                    lines[i] = f"Username = {username}\n"
+                    updated = True
+                elif line.startswith("Password ="):
+                    lines[i] = f"Password = {password}\n"
+                    updated = True
+
+            if not updated:
+                return False, "No se encontraron las líneas Init3, Username o Password en el archivo."
+
+            # Guardar los cambios en el archivo
+            with open(wvdial_conf_path, 'w') as f:
+                f.writelines(lines)
+
+            return True, "Archivo wvdial.conf actualizado correctamente."
+
+        except Exception as e:
+            return False, f"Error al editar el archivo: {str(e)}"
