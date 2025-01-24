@@ -403,34 +403,61 @@ class ModuloRed:
         except Exception as e:
             return False, f"Error al obtener la señal de {interface}: {str(e)}"
 
-
-    #Metodo para obtener la señal del sim7600x por medio del comando AT+CSQ (debe correrse antes de ejecutar el wvdial/ppp)
     @staticmethod
     def get_sim7600_signal_strength(port="/dev/ttyUSB2", baudrate=115200):
         """
-        Obtiene la intensidad de señal del módulo SIM7600X usando el comando AT+CSQ.
+        Obtiene la intensidad de señal del módulo SIM7600X usando los comandos AT+CSQ, AT+CPSI y AT+COPS.
+        Filtra la información relevante como la intensidad de señal, tipo de red, estado online, banda y operador.
         """
         try:
             # Configurar la conexión serial
             with serial.Serial(port, baudrate, timeout=1) as ser:
-                # Enviar el comando AT+CSQ
+                # Enviar el comando AT+CSQ (Intensidad de señal)
                 ser.write(b"AT+CSQ\r")
                 response = ser.readlines()
                 
-                # Procesar la respuesta
+                signal_strength = None
+                # Procesar la respuesta de AT+CSQ para obtener la intensidad de señal
                 for line in response:
                     line = line.decode().strip()
                     if line.startswith("+CSQ"):
-                        # La respuesta tiene el formato "+CSQ: <rssi>,<ber>"
                         parts = line.split(":")[1].strip().split(",")
                         rssi = int(parts[0])  # Intensidad de señal
-                        ber = int(parts[1])   # Error de bit
-                        # Convertir el valor RSSI a dBm (Referencia: SIM7600X Datasheet)
                         if rssi == 99:
-                            return True, "No detectable (99)"
+                            signal_strength = "No detectable"
                         else:
-                            signal_dbm = -113 + (rssi * 2)  # Fórmula de conversión a dBm
-                            return True, f"Intensidad de señal: {signal_dbm} dBm, BER: {ber}"
-            return False, "No se encontró +CSQ en la respuesta."
+                            signal_strength = -113 + (rssi * 2)  # Convertir a dBm
+
+                # Enviar el comando AT+CPSI para obtener detalles de la red (Tipo de red, Banda)
+                ser.write(b"AT+CPSI?\r")
+                response = ser.readlines()
+
+                network_type = None
+                band = None
+                for line in response:
+                    line = line.decode().strip()
+                    if line.startswith("+CPSI"):
+                        parts = line.split(":")[1].strip().split(",")
+                        network_type = parts[0].strip()  # LTE, WCDMA, etc.
+                        band = parts[7].strip()  # Banda de LTE o WCDMA
+
+                # Enviar el comando AT+COPS para obtener el operador (Carrier)
+                ser.write(b"AT+COPS?\r")
+                response = ser.readlines()
+                carrier = None
+                for line in response:
+                    line = line.decode().strip()
+                    if line.startswith("+COPS"):
+                        parts = line.split(":")[1].strip().split(",")
+                        carrier = parts[2].strip().replace('"', '')  # Nombre del operador
+                        
+                # Filtrar la información y devolver solo lo relevante
+                if signal_strength is not None and network_type and band and carrier:
+                    return True, f"Intensidad de señal: {signal_strength} dBm, Tipo de red: {network_type}, Online: Yes, Banda: {band}, Carrier: {carrier}"
+                else:
+                    return False, "No se pudo obtener toda la información relevante."
+
         except Exception as e:
-            return False, f"Error al obtener la señal del SIM7600X: {str(e)}"        
+            return False, f"Error al obtener la señal del SIM7600X: {str(e)}"
+
+
