@@ -2,6 +2,7 @@ import subprocess
 import json
 import os
 import time
+import serial
 from ModuloRed.Red import Red
 
 
@@ -359,3 +360,77 @@ class ModuloRed:
 
         except Exception as e:
             return False, f"Error al editar el archivo: {str(e)}"
+
+    @staticmethod
+    def get_wlan_signal_strength(interface="wlan1"):
+        """
+        Obtiene la información de la señal de una interfaz Wi-Fi usando iwconfig.
+        """
+        try:
+            # Ejecutar iwconfig para obtener información de la interfaz
+            result = subprocess.run(
+                ["iwconfig", interface], capture_output=True, text=True
+            )
+
+            if result.returncode != 0:
+                return False, f"No se pudo obtener la información de {interface}: {result.stderr.strip()}"
+
+            # Leer la salida y buscar las líneas relevantes
+            output = result.stdout
+            signal_info = {}
+
+            # Buscar ESSID, Bit Rate, Link Quality y Signal Level
+            for line in output.split("\n"):
+                line = line.strip()
+                if "ESSID" in line:
+                    signal_info["ESSID"] = line.split(":")[1].strip().replace('"', '') if ":" in line else "No asociado"
+                if "Bit Rate" in line:
+                    signal_info["Bit Rate"] = line.split("=")[1].split()[0].strip() + " Mb/s"
+                if "Link Quality" in line:
+                    signal_info["Link Quality"] = line.split("=")[1].split()[0].strip()
+                if "Signal level" in line:
+                    signal_info["Signal Level"] = line.split("=")[-1].strip()
+
+            # Verificar que todos los datos se hayan capturado
+            if signal_info:
+                mensaje = f"Información de {interface}: " + ", ".join(
+                    [f"{key}: {value}" for key, value in signal_info.items()]
+                )
+                return True, mensaje
+            else:
+                return False, f"No se encontró información relevante en la salida de iwconfig para {interface}."
+
+        except Exception as e:
+            return False, f"Error al obtener la señal de {interface}: {str(e)}"
+
+
+
+    @staticmethod
+    def get_sim7600_signal_strength(port="/dev/ttyUSB2", baudrate=115200):
+        """
+        Obtiene la intensidad de señal del módulo SIM7600X usando el comando AT+CSQ.
+        """
+        try:
+            # Configurar la conexión serial
+            with serial.Serial(port, baudrate, timeout=1) as ser:
+                # Enviar el comando AT+CSQ
+                ser.write(b"AT+CSQ\r")
+                response = ser.readlines()
+                
+                # Procesar la respuesta
+                for line in response:
+                    line = line.decode().strip()
+                    if line.startswith("+CSQ"):
+                        # La respuesta tiene el formato "+CSQ: <rssi>,<ber>"
+                        parts = line.split(":")[1].strip().split(",")
+                        rssi = int(parts[0])  # Intensidad de señal
+                        ber = int(parts[1])   # Error de bit
+                        # Convertir el valor RSSI a dBm (Referencia: SIM7600X Datasheet)
+                        if rssi == 99:
+                            return True, "No detectable (99)"
+                        else:
+                            signal_dbm = -113 + (rssi * 2)  # Fórmula de conversión a dBm
+                            return True, f"Intensidad de señal: {signal_dbm} dBm, BER: {ber}"
+            return False, "No se encontró +CSQ en la respuesta."
+        except Exception as e:
+            return False, f"Error al obtener la señal del SIM7600X: {str(e)}"        
