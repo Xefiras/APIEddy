@@ -209,6 +209,11 @@ async def signal_strength(interface: str = "wlan1", port: str = "/dev/ttyUSB2"):
             "message": mensaje
         }
 
+#Endpoint para saber que red se está utilizando
+@app.get("/check-network-status")
+async def check_network_status():
+    estado, mensaje = ModuloRed.obtener_estado_redes()
+    return {"estado": estado, "mensaje": mensaje}
 
 if __name__ == "__main__":
     uv.run(app, host = "0.0.0.0", port = 8000)

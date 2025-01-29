@@ -460,4 +460,23 @@ class ModuloRed:
         except Exception as e:
             return False, f"Error al obtener la señal del SIM7600X: {str(e)}"
 
+    @staticmethod
+    def obtener_estado_redes():
+        try:
+            # Obtener el estado de las interfaces de red con ifconfig
+            result = subprocess.run(["ifconfig"], capture_output=True, text=True)
 
+            if result.returncode != 0:
+                return False, "Error al obtener el estado de las interfaces de red."
+
+            # Analizar la salida para ver si las interfaces wlan1 o ppp0 están activas
+            output = result.stdout
+            if "wlan1" in output and "inet" in output:  # Verifica si wlan1 está activo
+                return True, "Cliente Wifi está activo."
+            elif "ppp0" in output and "inet" in output:  # Verifica si ppp0 está activo
+                return True, "Datos activados (ppp0)."
+            else:
+                return False, "Ninguna interfaz de red activa detectada."
+
+        except Exception as e:
+            return False, f"Error al obtener el estado de las interfaces de red: {str(e)}"
