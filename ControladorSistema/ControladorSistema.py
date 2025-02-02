@@ -15,8 +15,7 @@ class ControladorSistema:
     def apagar_sistema():
         try:
             subprocess.run(['shutdown', '-h', 'now'])
-            print("Apagando el módulo Eddy...")
-            return True, "Apagando el módulo Eddy..."
+            return True, "Módulo apagado"
         except Exception as e:
             return False, str(e)
 
