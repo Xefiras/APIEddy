@@ -185,28 +185,21 @@ async def toggle_ppp_connection():
             "message": mensaje
         }
 
-# Endpoint para consultar la intensidad de señal de wlan1 y SIM7600X
+# Endpoint para consultar la intensidad de señal
 @app.get("/signal-strength")
-async def signal_strength(interface: str = "wlan1", port: str = "/dev/ttyUSB2"):
+async def signal_strength(interface: str = "wlan1", port: str = "/dev/serial0"):
     if interface == "wlan1":
         estado, mensaje = ModuloRed.get_wlan_signal_strength(interface)
+        return {
+            "status": "success" if estado else "error",
+            "message": mensaje
+        }
     elif interface == "sim7600x":
-        estado, mensaje = ModuloRed.get_sim7600_signal_strength(port)
+        return ModuloRed.get_sim7600_signal_strength(port)
     else:
         return {
             "status": "error",
             "message": f"Interfaz no soportada: {interface}. Usa 'wlan1' o 'sim7600x'."
-        }
-
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
-        return {
-            "status": "error",
-            "message": mensaje
         }
 
 #Endpoint para saber que red se está utilizando

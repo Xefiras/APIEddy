@@ -404,62 +404,75 @@ class ModuloRed:
             return False, f"Error al obtener la señal de {interface}: {str(e)}"
 
     @staticmethod
-    def get_sim7600_signal_strength(port="/dev/ttyUSB2", baudrate=115200):
+    def get_sim7600_signal_strength(port="/dev/serial0", baudrate=115200):
         """
-        Obtiene la intensidad de señal del módulo SIM7600X usando los comandos AT+CSQ, AT+CPSI y AT+COPS.
-        Filtra la información relevante como la intensidad de señal, tipo de red, estado online, banda y operador.
+        Obtiene información de la señal del módulo SIM7600X y la devuelve en un diccionario.
         """
         try:
-            # Configurar la conexión serial
             with serial.Serial(port, baudrate, timeout=1) as ser:
-                # Enviar el comando AT+CSQ (Intensidad de señal)
+                # Comando AT+CSQ (Intensidad de señal)
                 ser.write(b"AT+CSQ\r")
+                time.sleep(0.5)
                 response = ser.readlines()
-                
+
                 signal_strength = None
-                # Procesar la respuesta de AT+CSQ para obtener la intensidad de señal
                 for line in response:
                     line = line.decode().strip()
                     if line.startswith("+CSQ"):
                         parts = line.split(":")[1].strip().split(",")
-                        rssi = int(parts[0])  # Intensidad de señal
-                        if rssi == 99:
-                            signal_strength = "No detectable"
-                        else:
-                            signal_strength = -113 + (rssi * 2)  # Convertir a dBm
+                        if len(parts) > 0:
+                            rssi = int(parts[0])  # Intensidad de señal
+                            if rssi == 99:
+                                signal_strength = "Sin señal"
+                            else:
+                                signal_strength = -113 + (rssi * 2)  # Convertir a dBm
 
-                # Enviar el comando AT+CPSI para obtener detalles de la red (Tipo de red, Banda)
+                # Comando AT+CPSI? (Tipo de red, Banda)
                 ser.write(b"AT+CPSI?\r")
+                time.sleep(0.5)
                 response = ser.readlines()
 
-                network_type = None
-                band = None
+                network_type = "No disponible"
+                band = "No disponible"
                 for line in response:
                     line = line.decode().strip()
                     if line.startswith("+CPSI"):
                         parts = line.split(":")[1].strip().split(",")
-                        network_type = parts[0].strip()  # LTE, WCDMA, etc.
-                        band = parts[7].strip()  # Banda de LTE o WCDMA
+                        if len(parts) > 7:
+                            network_type = parts[0].strip()
+                            band = parts[7].strip()
 
-                # Enviar el comando AT+COPS para obtener el operador (Carrier)
+                # Comando AT+COPS? (Operador de red)
                 ser.write(b"AT+COPS?\r")
+                time.sleep(0.5)
                 response = ser.readlines()
-                carrier = None
+
+                carrier = "No disponible"
                 for line in response:
                     line = line.decode().strip()
                     if line.startswith("+COPS"):
                         parts = line.split(":")[1].strip().split(",")
-                        carrier = parts[2].strip().replace('"', '')  # Nombre del operador
-                        
-                # Filtrar la información y devolver solo lo relevante
-                if signal_strength is not None and network_type and band and carrier:
-                    return True, f"Intensidad de señal: {signal_strength} dBm, Tipo de red: {network_type}, Online: Yes, Banda: {band}, Carrier: {carrier}"
-                else:
-                    return False, "No se pudo obtener toda la información relevante."
+                        if len(parts) > 2:
+                            carrier = parts[2].strip().replace('"', '')
+
+                # Construir y devolver el JSON
+                return {
+                    "status": "success",
+                    "data": {
+                        "signal_strength": signal_strength,
+                        "network_type": network_type,
+                        "band": band,
+                        "carrier": carrier
+                    }
+                }
 
         except Exception as e:
-            return False, f"Error al obtener la señal del SIM7600X: {str(e)}"
+            return {
+                "status": "error",
+                "message": f"Error al obtener la señal del SIM7600X: {str(e)}"
+            }
 
+        
     @staticmethod
     def obtener_estado_redes():
         try:
