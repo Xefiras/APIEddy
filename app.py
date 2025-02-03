@@ -208,5 +208,46 @@ async def check_network_status():
     estado, mensaje = ModuloRed.obtener_estado_redes()
     return {"estado": estado, "mensaje": mensaje}
 
+
+@app.get("/general-status")
+def general_status():
+    try:
+        estado_red, mensaje_red = ModuloRed.obtener_estado_redes()
+
+        if not estado_red:
+            return {"status": "error", "message": mensaje_red}
+
+        if mensaje_red == "Wi-Fi":
+            status, signal_info = ModuloRed.get_wlan_signal_strength()
+            connection_mode = "Wi-Fi"
+        else:
+            sim_data = ModuloRed.get_sim7600_signal_strength()
+            signal_info = {
+                "ESSID": sim_data["data"]["carrier"],
+                "Signal Level": sim_data["data"]["signal_strength"]
+            }
+            connection_mode = "Mobile"
+            status = True  # Se define status para evitar el error
+
+        if not status:
+            return {"status": "error", "message": signal_info}
+
+        response = {
+            "status": "success",
+            "data": {
+                "connection_mode": connection_mode,
+                "status": {
+                    "name": signal_info["ESSID"],
+                    "signal": signal_info["Signal Level"]
+                },
+                "battery_level": 75  # Valor fijo para ahora
+            }
+        }
+
+        return response
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     uv.run(app, host = "0.0.0.0", port = 8000)

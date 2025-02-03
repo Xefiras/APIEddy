@@ -3,6 +3,7 @@ import json
 import os
 import time
 import serial
+import re
 from ModuloRed.Red import Red
 
 
@@ -363,42 +364,22 @@ class ModuloRed:
 
     @staticmethod
     def get_wlan_signal_strength(interface="wlan1"):
-        """
-        Obtiene la información de la señal de una interfaz Wi-Fi usando iwconfig.
-        """
         try:
-            # Ejecutar iwconfig para obtener información de la interfaz
-            result = subprocess.run(
-                ["iwconfig", interface], capture_output=True, text=True
-            )
+            result = subprocess.run(["iwconfig", interface], capture_output=True, text=True)
 
             if result.returncode != 0:
                 return False, f"No se pudo obtener la información de {interface}: {result.stderr.strip()}"
 
-            # Leer la salida y buscar las líneas relevantes
             output = result.stdout
-            signal_info = {}
+            essid_match = re.search(r'ESSID:"(.*?)"', output)
+            signal_match = re.search(r'Signal level=(-?\d+) dBm', output)
 
-            # Buscar ESSID, Bit Rate, Link Quality y Signal Level
-            for line in output.split("\n"):
-                line = line.strip()
-                if "ESSID" in line:
-                    signal_info["ESSID"] = line.split(":")[1].strip().replace('"', '') if ":" in line else "No asociado"
-                if "Bit Rate" in line:
-                    signal_info["Bit Rate"] = line.split("=")[1].split()[0].strip() + " Mb/s"
-                if "Link Quality" in line:
-                    signal_info["Link Quality"] = line.split("=")[1].split()[0].strip()
-                if "Signal level" in line:
-                    signal_info["Signal Level"] = line.split("=")[-1].strip()
+            signal_info = {
+                "ESSID": essid_match.group(1) if essid_match else "Desconocido",
+                "Signal Level": int(signal_match.group(1)) if signal_match else 0
+            }
 
-            # Verificar que todos los datos se hayan capturado
-            if signal_info:
-                mensaje = f"Información de {interface}: " + ", ".join(
-                    [f"{key}: {value}" for key, value in signal_info.items()]
-                )
-                return True, mensaje
-            else:
-                return False, f"No se encontró información relevante en la salida de iwconfig para {interface}."
+            return True, signal_info
 
         except Exception as e:
             return False, f"Error al obtener la señal de {interface}: {str(e)}"
@@ -485,9 +466,9 @@ class ModuloRed:
             # Analizar la salida para ver si las interfaces wlan1 o ppp0 están activas
             output = result.stdout
             if "wlan1" in output and "inet" in output:  # Verifica si wlan1 está activo
-                return True, "Cliente Wifi está activo."
+                return True, "Wi-Fi"
             elif "ppp0" in output and "inet" in output:  # Verifica si ppp0 está activo
-                return True, "Datos activados (ppp0)."
+                return True, "Mobile"
             else:
                 return False, "Ninguna interfaz de red activa detectada."
 
