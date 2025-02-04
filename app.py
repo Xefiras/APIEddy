@@ -7,16 +7,12 @@ from ModuloRed.ModuloRed import ModuloRed
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-# Endpoint to shutdown the raspberry pi
+# Endpoint to shut down the raspberry pi
+# response form:
+# {
+#   "status": "success" | "error",
+#   "message": "Apagando el módulo Eddy..." | "Error message"
+# }
 @app.get("/shutdown")
 async def shutdown():
     estado, mensaje = ControladorSistema.apagar_sistema()
@@ -32,6 +28,7 @@ async def shutdown():
         }
     
 # Endpoint to reboot the raspberry pi
+# TODO
 @app.get("/reboot")
 async def reboot():
     estado, mensaje = ControladorSistema.reiniciar_sistema()
@@ -47,12 +44,32 @@ async def reboot():
         }
 
 '''Para manejar las conexiones wifi'''
+# Endpoint to scan for available Wi-Fi networks around
+# the Eddy module
+# response form:
+# {
+#   "status": "success" | "error",
+#   "networks": [ { "ssid": "network_name", "signal": "signal_strength", "security": "security_type" } ] | "Error message"
+# }
 @app.get("/wifi-scan")
 async def wifi_scan():
     modulo_red = ModuloRed(modo_conexion="wifi")
-    estado, mensaje = modulo_red.escanear_redes_wifi()
-    return {"estado": estado, "mensaje": mensaje}
+    estado, response = modulo_red.escanear_redes_wifi()
+    if estado:
+        return {
+            "status": "success",
+            "networks": response
+        }
+    else:
+        return {
+            "status": "error",
+            "message": response
+        }
 
+
+# Endpoint to list the EXISTING Wi-Fi networks saved in
+# Eddy module
+# TODO
 @app.get("/wifi-list")
 async def wifi_list_existente():
     modulo_red = ModuloRed(modo_conexion="wifi")
@@ -68,6 +85,7 @@ class NetworkIdRequest(BaseModel):
 
 # Endpoint para conectarse a una red Wi-Fi existente de acuerdo al ID de red
 @app.post("/connect-network")
+# TODO
 async def connect_network(request: NetworkIdRequest):
     modulo_red = ModuloRed(modo_conexion="wifi")
     network_id = request.network_id
@@ -78,18 +96,28 @@ class WifiConnectionRequest(BaseModel):
     ssid: str
     password: str
 
+# endpoint to connect to a new Wi-Fi network
+# response form:
+# {
+#   "status": "success" | "error",
+#   "message": "Connection successful" | "Error message"
+# }
 @app.post("/wifi-connection") #Para conexiones nuevas
 async def wifi_connection(request: WifiConnectionRequest):
     modulo_red = ModuloRed(modo_conexion="wifi")
     ssid = request.ssid
     password = request.password
     estado, mensaje = modulo_red.conectar_red_wifi(ssid, password)
-    return {"estado": estado, "mensaje": mensaje}
+    if estado:
+        return {"status": "success", "message": mensaje}
+    else:
+        return {"status": "error", "message": mensaje}
 
 # Definir un modelo Pydantic para recibir el parámetro como JSON
 class NetworkRequest(BaseModel):
     network_id: str
 
+# TODO
 @app.post("/delete-network")
 async def eliminar_red(request: NetworkRequest):
     modulo_red = ModuloRed(modo_conexion="wifi")
@@ -98,6 +126,7 @@ async def eliminar_red(request: NetworkRequest):
 
 '''Para manejar el hotspot'''
 #Endpoint para recuperar la información del hotspot
+# TODO
 @app.get("/access-point")
 async def access_point_info():
     # Crear el objeto de ModuloRed y llamar al método ejecutar_curl
@@ -115,24 +144,33 @@ async def access_point_info():
         }
     
 #Endpoint para conocer que clientes están conectados al AP
+# endpoint to get the list of connected clients to the hotspot
+# response form:
+# {
+#   "status": "success" | "error",
+#   "clients": [
+#       { "name": "client1", "ip": "192.168.0.165" },
+#       { "name": "client2", "ip": "192.168.9.10" }
+#   ]
+# }
 @app.get("/connected-clients")
 async def connected_clients_info():
     # Crear el objeto de ModuloRed y llamar al método ejecutar_curl
-    estado, respuesta = ModuloRed.obtener_clientes_conectados()
+    estado, response = ModuloRed.obtener_clientes_conectados()
     
     if estado:
         return {
             "status": "success",
-            "response": respuesta
+            "clients": response
         }
     else:
         return {
             "status": "error",
-            "message": respuesta
+            "message": response
         }
     
 # Endpoint para cambiar la configuración del hotspot
-@app.post("/update-hostapd-configuration")
+@app.put("/update-hostapd-configuration")
 async def update_hostapd_configuration(
     ssid: str = Body(...), 
     wpa_passphrase: str = Body(...)
@@ -156,7 +194,13 @@ class APNConfiguration(BaseModel):
     username: str
     password: str
 
-@app.post("/apn-configuration")
+# endpoint to update the APN configuration
+# response form:
+# {
+#   "status": "success" | "error",
+#   ""message": "APN configuration updated" | "Error message"
+# }
+@app.put("/apn-configuration")
 async def apn_configuration(config: APNConfiguration):
     estado, mensaje = ModuloRed.editar_wvdial(config.apn, config.username, config.password)
     if estado:
@@ -170,8 +214,13 @@ async def apn_configuration(config: APNConfiguration):
             "message": mensaje
         }
     
-# Endpoint para inicializar la conexión PPP y manejar la interfaz wlan1
-@app.get("/toggle-ppp-connection")
+# endpoint to update the connection mode (mobile or Wi-Fi)
+# response form:
+# {
+#   "status": "success" | "error",
+#   ""message": ""Modo de conexión actualizado a:" + mode" |"Error message"
+# }
+@app.put("/toggle-ppp-connection")
 async def toggle_ppp_connection():
     estado, mensaje = ModuloRed.toggle_ppp_connection()
     if estado:
@@ -208,7 +257,21 @@ async def check_network_status():
     estado, mensaje = ModuloRed.obtener_estado_redes()
     return {"estado": estado, "mensaje": mensaje}
 
-
+# Endpoint to get the principal data of the system
+# - Current connection mode and its _status_
+#   - _status_: Wi-Fi ssid and signal strength, or mobile network operator and signal strength
+# - Battery level
+# response form:
+# {
+#   "status": "success" | "error",
+#   "data": {
+#       "connection_mode": "Wi-Fi" | "Mobile",
+#       "status": {
+#           "name": "network_name",
+#           "signal": 70
+#       },
+#       "battery_level": 50
+#   }
 @app.get("/general-status")
 def general_status():
     try:
