@@ -1,8 +1,10 @@
 --> WvDial: Internet dialer version 1.61
 --> Initializing modem.
 --> Sending: AT
+AT
 OK
 --> Sending: ATZ
+ATZ
 OK
 --> Sending: AT+CGDCONT=1,"IP","internet.itelcel.com"
 AT+CGDCONT=1,"IP","internet.itelcel.com"
@@ -13,11 +15,10 @@ OK
 ATDT*99#
 CONNECT 115200
 --> Carrier detected.  Starting PPP immediately.
---> Starting pppd at Sat Feb  1 19:54:40 2025
---> Pid of pppd: 906
+--> Starting pppd at Sun Feb  2 19:50:19 2025
+--> Pid of pppd: 1167
 --> Using interface ppp0
---> local  IP address 10.215.51.110
+--> local  IP address 10.156.228.144
 --> remote IP address 10.64.64.64
---> primary   DNS address 10.208.61.116
---> secondary DNS address 10.122.64.60
-Caught signal 15:  Attempting to exit gracefully...
+--> primary   DNS address 10.255.91.156
+--> secondary DNS address 10.255.91.244

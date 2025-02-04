@@ -3,6 +3,7 @@ import json
 import os
 import time
 import serial
+import re
 from ModuloRed.Red import Red
 
 
@@ -206,17 +207,7 @@ class ModuloRed:
                     response_data = json.loads(result.stdout)
                 except json.JSONDecodeError:
                     response_data = result.stdout  # Si no es JSON, devolver como texto
-
-                # Modify the response_data structure to match with the correct schema
-                final_response = []
-                for client in response_data["active_clients"]:
-                    final_response.append(
-                        {
-                            "name": client["hostname"],
-                            "ip": client["ip_address"]
-                        }
-                    )
-                return True, final_response
+                return True, response_data
             else:
                 return False, result.stderr
         except Exception as e:
@@ -288,8 +279,7 @@ class ModuloRed:
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
                 time.sleep(7)
                 print("Conexión PPP detenida y wlan1 habilitada.")
-                # return True, "Conexión PPP detenida y wlan1 habilitada."
-                return True, "Wi-Fi"
+                return True, "Conexión PPP detenida y wlan1 habilitada."
             else:
                 # Si wvdial no está en ejecución, iniciar la conexión PPP en segundo plano
                 print("Deshabilitando wlan1 y ejecutando wvdial en segundo plano...")
@@ -312,8 +302,7 @@ class ModuloRed:
                         elapsed_time = time.time() - start_time
                         if elapsed_time > 15:  # Si pasa más de 15 segundos, considerar que está funcionando
                             print("Conexión PPP establecida correctamente.")
-                            # return True, "Conexión PPP establecida correctamente."
-                            return True, "Mobile"
+                            return True, "Conexión PPP establecida correctamente."
                         time.sleep(1)  # Esperar un momento antes de verificar nuevamente
                     
                     # Si el proceso termina antes de los 15 segundos, leer el log
@@ -325,9 +314,7 @@ class ModuloRed:
                         time.sleep(5)  # Esperar antes de reintentar
                     else:
                         print("Conexión PPP establecida correctamente.")
-                        # return True, "Conexión PPP establecida correctamente."
-                        return True, "Mobile"
-
+                        return True, "Conexión PPP establecida correctamente."
 
         except subprocess.CalledProcessError as e:
             print(f"Error en la ejecución del comando: {str(e)}")
@@ -377,49 +364,22 @@ class ModuloRed:
 
     @staticmethod
     def get_wlan_signal_strength(interface="wlan1"):
-        """
-        Obtiene la información de la señal de una interfaz Wi-Fi usando iwconfig.
-        """
         try:
-            # Ejecutar iwconfig para obtener información de la interfaz
-
-            # RECOMENDATION: YOU CAN USE
-            # nmcli -t -f IN-USE,SSID,SIGNAL device wifi list | grep "*" | cut -d: -f 2,3
-            # with this, u would see the next output:
-            # IZZY12234:100
-            # where IZZY12234 is the SSID and 100 is the signal strength
-            # result = subprocess.run("nmcli -t -f IN-USE,SSID,SIGNAL device wifi list | grep '*' | cut -d: -f 2,3", shell=True, capture_output=True, text=True)
-            result = subprocess.run(
-                ["iwconfig", interface], capture_output=True, text=True
-            )
+            result = subprocess.run(["iwconfig", interface], capture_output=True, text=True)
 
             if result.returncode != 0:
                 return False, f"No se pudo obtener la información de {interface}: {result.stderr.strip()}"
 
-            # Leer la salida y buscar las líneas relevantes
             output = result.stdout
-            signal_info = {}
+            essid_match = re.search(r'ESSID:"(.*?)"', output)
+            signal_match = re.search(r'Signal level=(-?\d+) dBm', output)
 
-            # Buscar ESSID, Bit Rate, Link Quality y Signal Level
-            for line in output.split("\n"):
-                line = line.strip()
-                if "ESSID" in line:
-                    signal_info["ESSID"] = line.split(":")[1].strip().replace('"', '') if ":" in line else "No asociado"
-                if "Bit Rate" in line:
-                    signal_info["Bit Rate"] = line.split("=")[1].split()[0].strip() + " Mb/s"
-                if "Link Quality" in line:
-                    signal_info["Link Quality"] = line.split("=")[1].split()[0].strip()
-                if "Signal level" in line:
-                    signal_info["Signal Level"] = line.split("=")[-1].strip()
+            signal_info = {
+                "ESSID": essid_match.group(1) if essid_match else "Desconocido",
+                "Signal Level": int(signal_match.group(1)) if signal_match else 0
+            }
 
-            # Verificar que todos los datos se hayan capturado
-            if signal_info:
-                mensaje = f"Información de {interface}: " + ", ".join(
-                    [f"{key}: {value}" for key, value in signal_info.items()]
-                )
-                return True, mensaje
-            else:
-                return False, f"No se encontró información relevante en la salida de iwconfig para {interface}."
+            return True, signal_info
 
         except Exception as e:
             return False, f"Error al obtener la señal de {interface}: {str(e)}"
@@ -506,9 +466,9 @@ class ModuloRed:
             # Analizar la salida para ver si las interfaces wlan1 o ppp0 están activas
             output = result.stdout
             if "wlan1" in output and "inet" in output:  # Verifica si wlan1 está activo
-                return True, "Cliente Wifi está activo."
+                return True, "Wi-Fi"
             elif "ppp0" in output and "inet" in output:  # Verifica si ppp0 está activo
-                return True, "Datos activados (ppp0)."
+                return True, "Mobile"
             else:
                 return False, "Ninguna interfaz de red activa detectada."
 
