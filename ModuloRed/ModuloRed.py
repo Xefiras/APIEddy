@@ -207,7 +207,16 @@ class ModuloRed:
                     response_data = json.loads(result.stdout)
                 except json.JSONDecodeError:
                     response_data = result.stdout  # Si no es JSON, devolver como texto
-                return True, response_data
+                    # Modify the response_data structure to match with the correct schema
+                    final_response = []
+                    for client in response_data["active_clients"]:
+                        final_response.append(
+                            {
+                                "name": client["hostname"],
+                                "ip": client["ip_address"]
+                            }
+                        )
+                    return True, final_response
             else:
                 return False, result.stderr
         except Exception as e:
@@ -279,7 +288,7 @@ class ModuloRed:
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
                 time.sleep(7)
                 print("Conexión PPP detenida y wlan1 habilitada.")
-                return True, "Conexión PPP detenida y wlan1 habilitada."
+                return True, "Wi-Fi"
             else:
                 # Si wvdial no está en ejecución, iniciar la conexión PPP en segundo plano
                 print("Deshabilitando wlan1 y ejecutando wvdial en segundo plano...")
@@ -302,7 +311,7 @@ class ModuloRed:
                         elapsed_time = time.time() - start_time
                         if elapsed_time > 15:  # Si pasa más de 15 segundos, considerar que está funcionando
                             print("Conexión PPP establecida correctamente.")
-                            return True, "Conexión PPP establecida correctamente."
+                            return True, "Mobile"
                         time.sleep(1)  # Esperar un momento antes de verificar nuevamente
                     
                     # Si el proceso termina antes de los 15 segundos, leer el log
@@ -314,7 +323,7 @@ class ModuloRed:
                         time.sleep(5)  # Esperar antes de reintentar
                     else:
                         print("Conexión PPP establecida correctamente.")
-                        return True, "Conexión PPP establecida correctamente."
+                        return True, "Mobile"
 
         except subprocess.CalledProcessError as e:
             print(f"Error en la ejecución del comando: {str(e)}")
@@ -365,6 +374,12 @@ class ModuloRed:
     @staticmethod
     def get_wlan_signal_strength(interface="wlan1"):
         try:
+            # RECOMENDATION: YOU CAN USE
+            # nmcli -t -f IN-USE,SSID,SIGNAL device wifi list | grep "*" | cut -d: -f 2,3
+            # with this, u would see the next output:
+            # IZZY12234:100
+            # where IZZY12234 is the SSID and 100 is the signal strength
+            # result = subprocess.run("nmcli -t -f IN-USE,SSID,SIGNAL device wifi list | grep '*' | cut -d: -f 2,3", shell=True, capture_output=True, text=True)
             result = subprocess.run(["iwconfig", interface], capture_output=True, text=True)
 
             if result.returncode != 0:

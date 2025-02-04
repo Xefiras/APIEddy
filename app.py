@@ -143,7 +143,6 @@ async def access_point_info():
             "message": respuesta
         }
     
-#Endpoint para conocer que clientes están conectados al AP
 # endpoint to get the list of connected clients to the hotspot
 # response form:
 # {
