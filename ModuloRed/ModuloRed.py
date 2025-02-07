@@ -202,25 +202,26 @@ class ModuloRed:
             result = subprocess.run(curl_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             
             if result.returncode == 0:
-                # Convertir la salida a JSON si es posible
                 try:
                     response_data = json.loads(result.stdout)
-                except json.JSONDecodeError:
-                    response_data = result.stdout  # Si no es JSON, devolver como texto
-                    # Modify the response_data structure to match with the correct schema
-                    final_response = []
-                    for client in response_data["active_clients"]:
-                        final_response.append(
-                            {
-                                "name": client["hostname"],
-                                "ip": client["ip_address"]
-                            }
-                        )
+                    
+                    # Procesar clientes si el JSON es válido
+                    final_response = [
+                        {
+                            "name": client.get("hostname", "Unknown"),
+                            "ip": client.get("ip_address", "N/A")
+                        }
+                        for client in response_data.get("active_clients", [])
+                    ]
                     return True, final_response
+                except json.JSONDecodeError:
+                    # Si la salida no es JSON, devolver como texto
+                    return False, "La salida no es JSON válido: " + result.stdout
             else:
-                return False, result.stderr
+                return False, "Error al ejecutar curl: " + result.stderr
         except Exception as e:
-            return False, str(e)
+            return False, f"Error general: {str(e)}"
+
         
     #Método para modificar la configuración del hotspot, donde al final se debe reiniciar el servicio para aplicar los cambios
     @staticmethod
