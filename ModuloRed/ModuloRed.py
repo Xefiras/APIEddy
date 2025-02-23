@@ -192,15 +192,16 @@ class ModuloRed:
                 return False, "No se pudo identificar la interfaz de red."
 
             netid = self.get_netid(ssid)
+            print(f'netid: {netid}')
 
             if netid is None or netid == -1:
                 return False, "La red no está guardada."
 
-            # Habilitar la red
-            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
-
             # Seleccionar la red recién agregada
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
+
+            # Habilitar la red
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
             return True, f"Conexión exitosa a {ssid}"
         except subprocess.CalledProcessError as e:
