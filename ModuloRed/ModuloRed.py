@@ -28,8 +28,14 @@ class ModuloRed:
             )
             if redes_wifi_cmd.returncode != 0:
                 return False, f"Error al escanear redes Wi-Fi: {redes_wifi_cmd.stderr.strip()}"
-            
-            redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout)
+
+            # Listar las redes Wi-Fi guardadas en wpa_supplicant
+            redes_wifi_guardadas = subprocess.run(
+                ['sudo', 'wpa_cli', '-i', self.interfaz_red, 'list_networks', '|', 'awk', '-F', '\t', "'{print $2}'"],
+                capture_output=True, text=True
+            )
+
+            redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout, redes_wifi_guardadas.stdout)
             return True, redes_wifi
 
         except Exception as e:
@@ -65,14 +71,19 @@ class ModuloRed:
             return False, str(e)
 
     @staticmethod
-    def extraer_datos_redes_wifi(redes_wifi_crudas):
+    def extraer_datos_redes_wifi(redes_wifi_crudas, redes_wifi_guardadas_crudas):
         redes_wifi = redes_wifi_crudas.strip().split('\n')
-        lista_redes = []
+        redes_wifi_guardadas = redes_wifi_guardadas_crudas.strip().split('\n')
 
-        for red_wifi in redes_wifi:
+        lista_redes = []
+        for red_wifi, red_wifi_guardada in redes_wifi, redes_wifi_guardadas:
             datos_red = red_wifi.split(':')
+
             if len(datos_red) >= 3 and datos_red[0]:
-                lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2]))
+                if datos_red[0] in red_wifi_guardada:
+                    lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
+                else:
+                    lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], False))
         return lista_redes
     
     def conectar_red_wifi(self, ssid, password):
@@ -117,8 +128,13 @@ class ModuloRed:
             # Seleccionar la red recién agregada
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
+            # Verificar estado
+            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+            if "wpa_state=COMPLETED" not in status:
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+                return False, "Verifique las credenciales"
+
             # Guardar la configuración
-            #print("Guardando Configuración")
             #subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "save_config"], check=True)
 
             return True, "Conexión exitosa"
@@ -283,9 +299,7 @@ class ModuloRed:
                 # Si wvdial está en ejecución, detenerlo y habilitar wlan1
                 print("Deteniendo wvdial y habilitando wlan1...")
                 subprocess.Popen(["sudo", "poff.wvdial"])
-                
-                
-                #subprocess.run(["sudo", "poff.wvdial"], check=True)
+
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
                 time.sleep(7)
                 print("Conexión PPP detenida y wlan1 habilitada.")

@@ -49,7 +49,7 @@ async def reboot():
 # response form:
 # {
 #   "status": "success" | "error",
-#   "networks": [ { "ssid": "network_name", "signal": "signal_strength", "security": "security_type" } ] | "Error message"
+#   "networks": [ { "ssid": "network_name", "signal": "signal_strength", "security": "security_type", known: Boolean } ] | "Error message"
 # }
 @app.get("/wifi-scan")
 async def wifi_scan():

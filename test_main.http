@@ -1,14 +1,23 @@
 # Test your FastAPI endpoints
 
-GET http://127.0.0.1:8000/
+###
+GET http://10.3.141.1:8000/general-status
 Accept: application/json
 
 ###
-
-GET http://127.0.0.1:8000/hello/User
+GET http://10.3.141.1:8000/wifi-list
 Accept: application/json
 
 ###
+POST http://10.3.141.1:8000/connect-network
+Accept: application/json
+Content-Type: application/json
 
-GET 127.0.0.1:8000/shutdown
+{
+    "network_id": "INFINITUM0962"
+}
+
+###
+
+GET http://10.3.141.1:8000/wifi-scan
 Accept: application/json
