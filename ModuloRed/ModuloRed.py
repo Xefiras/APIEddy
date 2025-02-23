@@ -2,6 +2,8 @@ import subprocess
 import json
 import os
 import time
+from traceback import print_tb
+
 import serial
 import re
 from ModuloRed.Red import Red
@@ -30,10 +32,10 @@ class ModuloRed:
                 return False, f"Error al escanear redes Wi-Fi: {redes_wifi_cmd.stderr.strip()}"
 
             # Listar las redes Wi-Fi guardadas en wpa_supplicant
-            redes_wifi_guardadas = subprocess.run(
-                ['sudo', 'wpa_cli', '-i', self.interfaz_red, 'list_networks', '|', 'awk', '-F', "'\\t'", "'{print $2}'"],
-                capture_output=True, text=True
-            )
+            command = f"wpa_cli -i {self.interfaz_red} list_networks | awk -F '\\t' '{{print $2}}'"
+
+            print("Sacando redes")
+            redes_wifi_guardadas = subprocess.run(command, shell=True, capture_output=True, text=True)
 
             redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout, redes_wifi_guardadas.stdout)
             return True, redes_wifi
@@ -72,6 +74,7 @@ class ModuloRed:
 
     @staticmethod
     def extraer_datos_redes_wifi(redes_wifi_crudas, redes_wifi_guardadas_crudas):
+        print("limpiando redes")
         redes_wifi = redes_wifi_crudas.strip().split('\n')
         redes_wifi_guardadas = redes_wifi_guardadas_crudas.strip().split('\n')
 
