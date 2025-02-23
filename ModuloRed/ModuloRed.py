@@ -30,9 +30,8 @@ class ModuloRed:
                 return False, f"Error al escanear redes Wi-Fi: {redes_wifi_cmd.stderr.strip()}"
 
             # Listar las redes Wi-Fi guardadas en wpa_supplicant
-            print("Listando redes guardadas...")
             redes_wifi_guardadas = subprocess.run(
-                ['sudo', 'wpa_cli', '-i', self.interfaz_red, 'list_networks', '|', 'awk', '-F', '\t', "'{print $2}'"],
+                ['sudo', 'wpa_cli', '-i', self.interfaz_red, 'list_networks', '|', 'awk', '-F', "'\\t'", "'{print $2}'"],
                 capture_output=True, text=True
             )
 
@@ -83,9 +82,11 @@ class ModuloRed:
             if len(datos_red) >= 3 and datos_red[0]:
                 if datos_red[0] in red_wifi_guardada:
                     lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
+                    print(f'Conocida: {datos_red[0]}')
                 else:
                     lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], False))
-        print(lista_redes)
+                    print(f'No conocida: {datos_red[0]}')
+        print(f'Lista: {lista_redes}')
         return lista_redes
     
     def conectar_red_wifi(self, ssid, password):
