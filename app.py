@@ -81,17 +81,19 @@ async def wifi_list_existente():
 
 # Definir el modelo de solicitud
 class NetworkIdRequest(BaseModel):
-    network_id: str
+    ssid: str
 
 # Endpoint para conectarse a una red Wi-Fi existente de acuerdo al ID de red
 @app.post("/connect-network")
 # TODO
 async def connect_network(request: NetworkIdRequest):
     modulo_red = ModuloRed(modo_conexion="wifi")
-    network_id = request.network_id
-    estado, mensaje = modulo_red.conectar_a_red_wifi_existente(network_id)
-    return {"estado": estado, "mensaje": mensaje}
-
+    ssid = request.ssid
+    estado, mensaje = modulo_red.conectar_red_wifi_conocida(ssid)
+    if estado:
+        return {"status": "success", "message": mensaje}
+    else:
+        return {"status": "error", "message": mensaje}
 class WifiConnectionRequest(BaseModel):
     ssid: str
     password: str

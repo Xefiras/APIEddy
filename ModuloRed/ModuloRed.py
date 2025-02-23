@@ -1,11 +1,11 @@
-import subprocess
 import json
 import os
+import re
+import subprocess
 import time
-from traceback import print_tb
 
 import serial
-import re
+
 from ModuloRed.Red import Red
 
 
@@ -163,6 +163,48 @@ class ModuloRed:
 
             return True, f"Conexión exitosa a la red con ID {network_id}"
 
+        except Exception as e:
+            return False, str(e)
+
+    def get_netid(self, ssid):
+        try:
+            # Listar redes existentes
+            result = subprocess.run(
+                ["sudo", "wpa_cli", "-i", self.interfaz_red, "list_networks"],
+                capture_output=True, text=True
+            )
+            networks = result.stdout.splitlines()
+
+            # Buscar si ya existe una red con el SSID proporcionado
+            netid = None
+            for line in networks[1:]:  # Ignorar la primera línea (encabezados)
+                columns = line.split("\t")
+                if len(columns) > 1 and columns[1] == ssid:
+                    netid = columns[0]  # Obtener el ID de la red existente
+                    break
+            return netid
+        except Exception as e:
+            return -1
+
+    def conectar_red_wifi_conocida(self, ssid):
+        try:
+            if not self.interfaz_red:
+                return False, "No se pudo identificar la interfaz de red."
+
+            netid = self.get_netid(ssid)
+
+            if netid is None or netid == -1:
+                return False, "La red no está guardada."
+
+            # Habilitar la red
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
+
+            # Seleccionar la red recién agregada
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
+
+            return True, f"Conexión exitosa a {ssid}"
+        except subprocess.CalledProcessError as e:
+            return False, f"Error al conectar: {e}"
         except Exception as e:
             return False, str(e)
     
