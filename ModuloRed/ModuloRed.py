@@ -84,6 +84,7 @@ class ModuloRed:
                     lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
                 else:
                     lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], False))
+        print(lista_redes)
         return lista_redes
     
     def conectar_red_wifi(self, ssid, password):
