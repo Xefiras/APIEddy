@@ -36,8 +36,6 @@ class ModuloRed:
                 capture_output=True, text=True
             )
 
-            print(redes_wifi_guardadas.stdout)
-
             redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout, redes_wifi_guardadas.stdout)
             return True, redes_wifi
 
