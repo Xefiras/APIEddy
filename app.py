@@ -84,8 +84,12 @@ class NetworkIdRequest(BaseModel):
     ssid: str
 
 # Endpoint para conectarse a una red Wi-Fi existente de acuerdo al ID de red
-@app.post("/connect-network")
-# TODO
+@app.put("/connect-network")
+# response form:
+# # {
+# #   "status": "success" | "error",
+# #   "message": "connection successful" | "Error message"
+# # }
 async def connect_network(request: NetworkIdRequest):
     modulo_red = ModuloRed(modo_conexion="wifi")
     ssid = request.ssid
