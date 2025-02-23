@@ -78,6 +78,9 @@ class ModuloRed:
         redes_wifi = redes_wifi_crudas.strip().split('\n')
         redes_wifi_guardadas = redes_wifi_guardadas_crudas.strip().split('\n')
 
+        print(redes_wifi)
+        print(redes_wifi_guardadas)
+
         lista_redes = []
         for red_wifi, red_wifi_guardada in redes_wifi, redes_wifi_guardadas:
             datos_red = red_wifi.split(':')
