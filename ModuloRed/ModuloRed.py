@@ -34,7 +34,6 @@ class ModuloRed:
             # Listar las redes Wi-Fi guardadas en wpa_supplicant
             command = f"wpa_cli -i {self.interfaz_red} list_networks | awk -F '\\t' '{{print $2}}'"
 
-            print("Sacando redes")
             redes_wifi_guardadas = subprocess.run(command, shell=True, capture_output=True, text=True)
 
             redes_wifi = self.extraer_datos_redes_wifi(redes_wifi_cmd.stdout, redes_wifi_guardadas.stdout)
@@ -74,7 +73,6 @@ class ModuloRed:
 
     @staticmethod
     def extraer_datos_redes_wifi(redes_wifi_crudas, redes_wifi_guardadas_crudas):
-        print("limpiando redes")
         redes_wifi = redes_wifi_crudas.strip().split('\n')
         redes_wifi_guardadas = redes_wifi_guardadas_crudas.strip().split('\n')
 
@@ -86,14 +84,11 @@ class ModuloRed:
                 conocida = False
                 for red_wifi_guardada in redes_wifi_guardadas:
                     if datos_red[0] in red_wifi_guardada:
-                        lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
-                        print(f'Conocida: {datos_red[0]}')
+                        lista_redes.append(Red(datos_red[0], datos_red[1], datos_red[2], True))
                         conocida = True
                         break
                 if not conocida:
-                    lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], False))
-                    print(f'No conocida: {datos_red[0]}')
-        print(f'Lista: {lista_redes}')
+                    lista_redes.append(Red(datos_red[0], datos_red[1], datos_red[2], False))
         return lista_redes
     
     def conectar_red_wifi(self, ssid, password):
