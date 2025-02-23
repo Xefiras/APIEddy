@@ -78,18 +78,19 @@ class ModuloRed:
         redes_wifi = redes_wifi_crudas.strip().split('\n')
         redes_wifi_guardadas = redes_wifi_guardadas_crudas.strip().split('\n')
 
-        print(redes_wifi)
-        print(redes_wifi_guardadas)
-
         lista_redes = []
-        for red_wifi, red_wifi_guardada in redes_wifi, redes_wifi_guardadas:
+        for red_wifi in redes_wifi:
             datos_red = red_wifi.split(':')
 
             if len(datos_red) >= 3 and datos_red[0]:
-                if datos_red[0] in red_wifi_guardada:
-                    lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
-                    print(f'Conocida: {datos_red[0]}')
-                else:
+                conocida = False
+                for red_wifi_guardada in redes_wifi_guardadas:
+                    if datos_red[0] in red_wifi_guardada:
+                        lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], True))
+                        print(f'Conocida: {datos_red[0]}')
+                        conocida = True
+                        break
+                if not conocida:
                     lista_redes.append(Red(datos_red[0], '', datos_red[1], datos_red[2], False))
                     print(f'No conocida: {datos_red[0]}')
         print(f'Lista: {lista_redes}')
