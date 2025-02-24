@@ -146,7 +146,7 @@ class ModuloRed:
                 print(f'status: {status}')
                 if "wpa_state=COMPLETED" in status:
                     return True, "Conexión exitosa"
-                time.sleep(5)  # Esperar 5 segundos antes de reintentar
+                time.sleep(10)  # Esperar 10 segundos antes de reintentar
 
             # Si no se pudo conectar, eliminar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
