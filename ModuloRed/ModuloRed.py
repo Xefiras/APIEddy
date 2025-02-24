@@ -139,6 +139,9 @@ class ModuloRed:
             print("Seleccionando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
+            # Esperar un momento antes de verificar el estado
+            time.sleep(10)
+
             # Verificar estado en un loop
             for _ in range(5):  # Intentar 5 veces
                 print("Verificando estado")
@@ -146,7 +149,7 @@ class ModuloRed:
                 print(f'status: {status}')
                 if "wpa_state=COMPLETED" in status:
                     return True, "Conexión exitosa"
-                time.sleep(10)  # Esperar 10 segundos antes de reintentar
+                time.sleep(6)  # Esperar 10 segundos antes de reintentar
 
             # Si no se pudo conectar, eliminar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
