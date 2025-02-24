@@ -135,16 +135,16 @@ class ModuloRed:
             # Seleccionar la red recién agregada
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
-            # Verificar estado
-            # status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
-            # if "wpa_state=COMPLETED" not in status:
-            #     subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
-            #     return False, "Verifique las credenciales"
+            # Verificar estado en un loop
+            for _ in range(5):  # Intentar 5 veces
+                status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+                if "wpa_state=COMPLETED" in status:
+                    return True, "Conexión exitosa"
+                time.sleep(2)  # Esperar 2 segundos antes de reintentar
 
-            # Guardar la configuración
-            #subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "save_config"], check=True)
-
-            return True, "Conexión exitosa"
+            # Si no se pudo conectar, eliminar la red
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+            return False, "Verifique las credenciales"
 
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
@@ -207,13 +207,17 @@ class ModuloRed:
             # Habilitar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
-            # Verificar estado
-            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
-            if "wpa_state=COMPLETED" not in status:
-                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
-                return False, "Verifique las credenciales"
+            # Verificar estado en un loop
+            for _ in range(5):  # Intentar 5 veces
+                status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+                if "wpa_state=COMPLETED" in status:
+                    return True, f"Conexión exitosa a {ssid}"
+                time.sleep(2)  # Esperar 2 segundos antes de reintentar
 
-            return True, f"Conexión exitosa a {ssid}"
+            # Si no se pudo conectar, eliminar la red
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+            return False, "Verifique las credenciales"
+
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
         except Exception as e:
