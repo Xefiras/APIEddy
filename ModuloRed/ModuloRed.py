@@ -118,6 +118,7 @@ class ModuloRed:
                     ["sudo", "wpa_cli", "-i", self.interfaz_red, "add_network"],
                     capture_output=True, text=True
                 ).stdout.strip()
+                time.sleep(5)
 
                 if not netid.isdigit():
                     return False, f"Error al agregar red: {netid}"
@@ -125,22 +126,25 @@ class ModuloRed:
                 # Configurar el SSID
                 print("Configurando SSID")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "ssid", f'"{ssid}"'], check=True)
-
+                time.sleep(5)
 
                 # Configurar la contraseña (PSK)
                 print("Configurando contraseña")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "psk", f'"{password}"'], check=True)
+                time.sleep(5)
 
             # Habilitar la red
             print("Habilitando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
+            time.sleep(5)
+
 
             # Seleccionar la red recién agregada
             print("Seleccionando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
             # Esperar un momento antes de verificar el estado
-            time.sleep(10)
+            time.sleep(5)
 
             # Verificar estado en un loop
             for _ in range(5):  # Intentar 5 veces
@@ -149,7 +153,7 @@ class ModuloRed:
                 print(f'status: {status}')
                 if "wpa_state=COMPLETED" in status:
                     return True, "Conexión exitosa"
-                time.sleep(6)  # Esperar 10 segundos antes de reintentar
+                time.sleep(5)  # Esperar 10 segundos antes de reintentar
 
             # Si no se pudo conectar, eliminar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
