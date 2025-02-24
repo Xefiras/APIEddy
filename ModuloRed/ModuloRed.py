@@ -113,6 +113,7 @@ class ModuloRed:
            
             # Si no existe, agregar una nueva red
             if netid is None:
+                print("Agregando red")
                 netid = subprocess.run(
                     ["sudo", "wpa_cli", "-i", self.interfaz_red, "add_network"],
                     capture_output=True, text=True
@@ -122,25 +123,30 @@ class ModuloRed:
                     return False, f"Error al agregar red: {netid}"
 
                 # Configurar el SSID
+                print("Configurando SSID")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "ssid", f'"{ssid}"'], check=True)
 
+
                 # Configurar la contraseña (PSK)
+                print("Configurando contraseña")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "psk", f'"{password}"'], check=True)
 
-                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "key_mgmt", "WPA-PSK"], check=True)
-
             # Habilitar la red
+            print("Habilitando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
             # Seleccionar la red recién agregada
+            print("Seleccionando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
             # Verificar estado en un loop
             for _ in range(5):  # Intentar 5 veces
+                print("Verificando estado")
                 status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+                print(f'status: {status}')
                 if "wpa_state=COMPLETED" in status:
                     return True, "Conexión exitosa"
-                time.sleep(2)  # Esperar 2 segundos antes de reintentar
+                time.sleep(5)  # Esperar 5 segundos antes de reintentar
 
             # Si no se pudo conectar, eliminar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
