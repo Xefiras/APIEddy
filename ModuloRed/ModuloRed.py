@@ -136,10 +136,10 @@ class ModuloRed:
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
             # Verificar estado
-            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
-            if "wpa_state=COMPLETED" not in status:
-                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
-                return False, "Verifique las credenciales"
+            # status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+            # if "wpa_state=COMPLETED" not in status:
+            #     subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+            #     return False, "Verifique las credenciales"
 
             # Guardar la configuración
             #subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "save_config"], check=True)
@@ -437,7 +437,7 @@ class ModuloRed:
                     while process.poll() is None:  # Mientras el proceso no termine
                         elapsed_time = time.time() - start_time
                         if elapsed_time > 15:  # Si pasa más de 15 segundos, considerar que está funcionando
-                            print("Conexión PPP establecida correctamente.")
+                            print("Conexión PPP establecida correctamente")
                             return True, "Mobile"
                         time.sleep(1)  # Esperar un momento antes de verificar nuevamente
                     
