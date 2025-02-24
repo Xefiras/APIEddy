@@ -166,6 +166,7 @@ class ModuloRed:
         except Exception as e:
             return False, str(e)
 
+    # Método para obtener el ID de una red Wi-Fi conocida
     def get_netid(self, ssid):
         try:
             # Listar redes existentes
@@ -186,6 +187,7 @@ class ModuloRed:
         except Exception as e:
             return -1
 
+    # Método para conectar a una red Wi-Fi conocida por su SSID
     def conectar_red_wifi_conocida(self, ssid):
         try:
             if not self.interfaz_red:
@@ -203,11 +205,69 @@ class ModuloRed:
             # Habilitar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
+            # Verificar estado
+            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+            if "wpa_state=COMPLETED" not in status:
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+                return False, "Verifique las credenciales"
+
             return True, f"Conexión exitosa a {ssid}"
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
         except Exception as e:
             return False, str(e)
+
+    # Método para conectar a una red Wi-Fi abierta
+    def conectar_red_wifi_abierta(self, ssid):
+        try:
+            if not self.interfaz_red:
+                return False, "No se pudo identificar la interfaz de red."
+
+            # Listar redes existentes
+            result = subprocess.run(
+                ["sudo", "wpa_cli", "-i", self.interfaz_red, "list_networks"],
+                capture_output=True, text=True
+            )
+            networks = result.stdout.splitlines()
+
+            # Buscar si ya existe una red con el SSID proporcionado
+            netid = None
+            for line in networks[1:]:  # Ignorar la primera línea (encabezados)
+                columns = line.split("\t")
+                if len(columns) > 1 and columns[1] == ssid:
+                    netid = columns[0]  # Obtener el ID de la red existente
+                    break
+
+            # Si no existe, agregar una nueva red
+            if netid is None:
+                netid = subprocess.run(
+                    ["sudo", "wpa_cli", "-i", self.interfaz_red, "add_network"],
+                    capture_output=True, text=True
+                ).stdout.strip()
+
+                if not netid.isdigit():
+                    return False, f"Error al agregar red: {netid}"
+
+                # Configurar el SSID
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "ssid", f'"{ssid}"'], check=True)
+
+                # Habilitar la red
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
+
+            # Seleccionar la red recién agregada
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
+
+            # Verificar estado
+            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+            if "wpa_state=COMPLETED" not in status:
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+                return False, "Verifique las credenciales"
+
+            return True, "Conexión exitosa"
+
+        except subprocess.CalledProcessError as e:
+            return False, f"Error al conectar: {e}"
+
     
     def eliminar_red_wifi(self, network_id):
             try:

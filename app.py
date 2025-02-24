@@ -98,6 +98,21 @@ async def connect_network(request: NetworkIdRequest):
         return {"status": "success", "message": mensaje}
     else:
         return {"status": "error", "message": mensaje}
+
+
+@app.put("/open-wifi")
+async def open_wifi(request: NetworkIdRequest):
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    ssid = request.ssid
+    estado, mensaje = modulo_red.conectar_red_wifi_abierta(ssid)
+    if estado:
+        return {"status": "success", "message": mensaje}
+    else:
+        return {"status": "error", "message": mensaje}
+
+
+
+
 class WifiConnectionRequest(BaseModel):
     ssid: str
     password: str
