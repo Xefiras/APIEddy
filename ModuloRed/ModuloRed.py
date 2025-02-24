@@ -164,6 +164,26 @@ class ModuloRed:
         except Exception as e:
             return False, str(e)
 
+    def obtener_estado_conexion(self, ssid):
+        try:
+            # Verificar estado en un loop
+            for _ in range(5):  # Intentar 5 veces
+                print("Verificando estado")
+                status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
+                print(f'status: {status}')
+                if "wpa_state=COMPLETED" in status:
+                    return True, "Conexión exitosa"
+                time.sleep(5)  # Esperar 10 segundos antes de reintentar
+
+            # Si no se pudo conectar, eliminar la red
+            netid = self.get_netid(ssid)
+            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
+            return False, "Verifique las credenciales"
+
+        except subprocess.CalledProcessError as e:
+            return False, f"Error al conectar: {e}"
+
+
     # Método para conectar a una red Wi-Fi por su ID
     def conectar_a_red_wifi_existente(self, network_id):
         try:

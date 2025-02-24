@@ -132,6 +132,17 @@ async def wifi_connection(request: WifiConnectionRequest):
     else:
         return {"status": "error", "message": mensaje}
 
+
+@app.get("/connetion-status")
+async def connection_status(request: NetworkIdRequest):
+    modulo_red = ModuloRed(modo_conexion="wifi")
+    ssid = request.ssid
+    estado, mensaje = modulo_red.obtener_estado_conexion(ssid)
+    if estado:
+        return {"status": "success", "message": mensaje}
+    else:
+        return {"status": "error", "message": mensaje}
+
 # Definir un modelo Pydantic para recibir el parámetro como JSON
 class NetworkRequest(BaseModel):
     network_id: str
