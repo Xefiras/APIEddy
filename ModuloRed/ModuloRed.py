@@ -145,13 +145,16 @@ class ModuloRed:
 
             # Esperar un momento antes de verificar el estado
             time.sleep(5)
-            return True, "Conexión exitosa"
+
+            # Verificar estado
+            return self.obtener_estado_conexion(ssid)
 
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
         except Exception as e:
             return False, str(e)
 
+    # Método para obtener el estado de la conexión
     def obtener_estado_conexion(self, ssid):
         try:
             # Verificar estado en un loop
@@ -228,16 +231,8 @@ class ModuloRed:
             # Habilitar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
-            # Verificar estado en un loop
-            for _ in range(5):  # Intentar 5 veces
-                status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
-                if "wpa_state=COMPLETED" in status:
-                    return True, f"Conexión exitosa a {ssid}"
-                time.sleep(2)  # Esperar 2 segundos antes de reintentar
-
-            # Si no se pudo conectar, eliminar la red
-            subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
-            return False, "Verifique las credenciales"
+            # Verificar estado
+            return self.obtener_estado_conexion(ssid)
 
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
@@ -285,12 +280,7 @@ class ModuloRed:
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
 
             # Verificar estado
-            status = subprocess.check_output(["sudo", "wpa_cli", "-i", self.interfaz_red, "status"]).decode("utf-8")
-            if "wpa_state=COMPLETED" not in status:
-                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "remove_network", netid], check=True)
-                return False, "Verifique las credenciales"
-
-            return True, "Conexión exitosa"
+            return self.obtener_estado_conexion(ssid)
 
         except subprocess.CalledProcessError as e:
             return False, f"Error al conectar: {e}"
