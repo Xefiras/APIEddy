@@ -127,6 +127,8 @@ class ModuloRed:
                 # Configurar la contraseña (PSK)
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "psk", f'"{password}"'], check=True)
 
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "key_mgmt", "WPA-PSK"], check=True)
+
             # Habilitar la red
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
@@ -399,6 +401,8 @@ class ModuloRed:
             wvdial_running = subprocess.run(
                 ["pgrep", "wvdial"], capture_output=True, text=True
             ).returncode == 0
+
+            print(f"Estado de wvdial: {'Ejecutándose' if wvdial_running else 'Detenido'}")
             
             # Ruta donde se guardará el log de la salida de wvdial
             log_file = os.path.join(os.getcwd(), "wvdial_output.log")

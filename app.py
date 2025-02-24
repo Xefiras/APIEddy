@@ -111,8 +111,6 @@ async def open_wifi(request: NetworkIdRequest):
         return {"status": "error", "message": mensaje}
 
 
-
-
 class WifiConnectionRequest(BaseModel):
     ssid: str
     password: str
