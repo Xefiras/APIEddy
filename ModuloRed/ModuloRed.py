@@ -569,7 +569,8 @@ class ModuloRed:
                             if rssi == 99:
                                 signal_strength = "Sin señal"
                             else:
-                                signal_strength = -113 + (rssi * 2)  # Convertir a dBm
+                                signal_dBm = -113 + (rssi * 2)  # Convertir a dBm
+                                signal_strength = max(0, min(100, 2 * (signal_dBm + 100)))  # Convertir a escala 0-100
 
                 # Comando AT+CPSI? (Tipo de red, Banda)
                 ser.write(b"AT+CPSI?\r")
