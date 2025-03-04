@@ -531,9 +531,15 @@ class ModuloRed:
             essid_match = re.search(r'ESSID:"(.*?)"', output)
             signal_match = re.search(r'Signal level=(-?\d+) dBm', output)
 
+            if signal_match:
+                signal_dBm = int(signal_match.group(1))
+                signal_percentage = max(0, min(100, 2 * (signal_dBm + 100)))
+            else:
+                signal_percentage = 0
+
             signal_info = {
                 "ESSID": essid_match.group(1) if essid_match else "Desconocido",
-                "Signal Level": int(signal_match.group(1)) if signal_match else 0
+                "Signal Level": signal_percentage if signal_match else 0
             }
 
             return True, signal_info
