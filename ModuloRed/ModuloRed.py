@@ -436,6 +436,7 @@ class ModuloRed:
                 print("Deshabilitando wlan1 y ejecutando wvdial en segundo plano...")
                                     
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "down"], check=True)
+                print("wlan1 deshabilitado.")
 
                 while True:
                     # Ejecutar wvdial y guardar salida en log
@@ -446,6 +447,7 @@ class ModuloRed:
                             stderr=log_file,
                             text=True
                         )
+                        print(f'Process PID: {process.pid}')
 
                     # Medir tiempo de ejecución
                     start_time = time.time()
