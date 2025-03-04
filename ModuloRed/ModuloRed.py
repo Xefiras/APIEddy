@@ -425,7 +425,16 @@ class ModuloRed:
             if wvdial_running:
                 # Si wvdial está en ejecución, detenerlo y habilitar wlan1
                 print("Deteniendo wvdial y habilitando wlan1...")
-                subprocess.Popen(["sudo", "poff.wvdial"])
+                subprocess.run(["sudo", "poff.wvdial"], check=True)
+
+                time.sleep(3)
+
+                # ensure that the wvdial process is killed
+                wvdial_running = subprocess.run(
+                    ["pgrep", "wvdial"], capture_output=True, text=True
+                ).returncode == 0
+                print(f"Estado de wvdial tras poff.wvdial: {'Ejecutándose' if wvdial_running else 'Detenido'}")
+
 
                 subprocess.run(["sudo", "ip", "link", "set", "wlan1", "up"], check=True)
                 time.sleep(7)
