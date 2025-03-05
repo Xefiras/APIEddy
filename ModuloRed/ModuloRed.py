@@ -266,18 +266,24 @@ class ModuloRed:
                     ["sudo", "wpa_cli", "-i", self.interfaz_red, "add_network"],
                     capture_output=True, text=True
                 ).stdout.strip()
+                time.sleep(5)
 
                 if not netid.isdigit():
                     return False, f"Error al agregar red: {netid}"
 
                 # Configurar el SSID
+                print("Configurando SSID")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "ssid", f'"{ssid}"'], check=True)
 
                 # Habilitar la red
+                print("Habilitando red abierta")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
 
             # Seleccionar la red recién agregada
+            print("Seleccionando red")
             subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "select_network", netid], check=True)
+
+            time.sleep(5)
 
             # Verificar estado
             return self.obtener_estado_conexion(ssid)
