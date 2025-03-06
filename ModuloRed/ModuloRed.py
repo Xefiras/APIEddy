@@ -275,6 +275,10 @@ class ModuloRed:
                 print("Configurando SSID")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "ssid", f'"{ssid}"'], check=True)
 
+                # Configurar la clave de red
+                print("Configurando clave de red")
+                subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "set_network", netid, "key_mgmt", "NONE"], check=True)
+
                 # Habilitar la red
                 print("Habilitando red abierta")
                 subprocess.run(["sudo", "wpa_cli", "-i", self.interfaz_red, "enable_network", netid], check=True)
