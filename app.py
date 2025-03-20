@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Body
-from pydantic import BaseModel
 import uvicorn as uv
+from fastapi import FastAPI
+from pydantic import BaseModel
 
 from ControladorSistema.ControladorSistema import ControladorSistema
 from ModuloRed.ModuloRed import ModuloRed
+from ModuloBateria.BateriaModulo import BateriaModulo
 
 app = FastAPI()
 
@@ -197,13 +198,22 @@ async def connected_clients_info():
             "status": "error",
             "message": response
         }
-    
-# Endpoint para cambiar la configuración del hotspot
+
+
+class HotspotConfiguration(BaseModel):
+    ssid: str
+    password: str
+
+# endpoint to update the Hotspot configuration
+# response form:
+# {
+#   "status": "success" | "error",
+#   ""message": "Hotspot actualizado" | "Error message"
+# }
 @app.put("/update-hostapd-configuration")
-async def update_hostapd_configuration(
-    ssid: str = Body(...), 
-    wpa_passphrase: str = Body(...)
-):
+async def update_hostapd_configuration(config: HotspotConfiguration):
+    ssid = config.ssid
+    wpa_passphrase = config.password
     estado, mensaje = ModuloRed.editar_hostapd(ssid, wpa_passphrase)
     if estado:
         return {
@@ -285,6 +295,23 @@ async def signal_strength(interface: str = "wlan1", port: str = "/dev/serial0"):
 async def check_network_status():
     estado, mensaje = ModuloRed.obtener_estado_redes()
     return {"estado": estado, "mensaje": mensaje}
+
+# Endpoint for getting the battery status
+@app.get("/battery-status")
+async def battery_status():
+    bateria = BateriaModulo()
+    estado, message = bateria.get_status()
+    if estado:
+        return {
+            "status": "success",
+            "charge": message[0],
+            "charging": message[1]
+        }
+    else:
+        return {
+            "status": "error",
+            "message": message
+        }
 
 # Endpoint to get the principal data of the system
 # - Current connection mode and its _status_
