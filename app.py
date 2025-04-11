@@ -210,7 +210,7 @@ class HotspotConfiguration(BaseModel):
 #   "status": "success" | "error",
 #   ""message": "Hotspot actualizado" | "Error message"
 # }
-@app.put("/update-hostapd-configuration")
+@app.put("//hotspot-configuration")
 async def update_hostapd_configuration(config: HotspotConfiguration):
     ssid = config.ssid
     wpa_passphrase = config.password
@@ -297,6 +297,13 @@ async def check_network_status():
     return {"estado": estado, "mensaje": mensaje}
 
 # Endpoint for getting the battery status
+# response form:
+# {
+#   "status": "success" | "error",
+#   "charge": 50,
+#   "charging": false,
+#   "remaining_time": 30
+# }
 @app.get("/battery-status")
 async def battery_status():
     bateria = BateriaModulo()
@@ -305,7 +312,8 @@ async def battery_status():
         return {
             "status": "success",
             "charge": message[0],
-            "charging": message[1]
+            "charging": message[1],
+            "remaining_time": message[2]
         }
     else:
         return {

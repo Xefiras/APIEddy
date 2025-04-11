@@ -1,17 +1,38 @@
+import busio
+import digitalio
+import board
+from adafruit_mcp3xxx.analog_in import AnalogIn
+import adafruit_mcp3xxx.mcp3008 as MCP
+
+
 class BateriaModulo:
+    MIN_VOLTAGE = 3.0  # TODO Preguntarle a Pao los valores reales
+    MAX_VOLTAGE = 4.2
+    tiempo_total = 60 * 3 # 3 horas en minutos
+
     def __init__(self):
-        self.carga = self.get_carga()
-        self.cargando = self.get_cargando()
+        self.spi = busio.SPI(board.SCK, board.MOSI, board.MISO) # SPI bus
+        self.cs = digitalio.DigitalInOut(board.D5) # Chip select
+        self.mcp = MCP.MCP3008(self.spi, self.cs) # MCP3008 object
 
     def get_carga(self):
-        # TODO some command to get the battery charge
-        self.carga = 50
-        return self.carga
+        chan = AnalogIn(self.mcp, MCP.P0)
+        voltage = chan.voltage
+
+        # Calculate the battery percentage based on the voltage
+        carga = max(0, min(100, int(( (voltage - self.MIN_VOLTAGE) / (self.MAX_VOLTAGE - self.MIN_VOLTAGE)) * 100 )))
+        return round(carga)
 
     def get_cargando(self):
-        # TODO some command to get the battery status
-        self.cargando = False
-        return self.cargando
+        pin_cargando = digitalio.DigitalInOut(board.D6)
+        pin_cargando.direction = digitalio.Direction.INPUT
+        return pin_cargando.value # True cargando || False no
 
+    def get_tiempo_restante(self):
+        carga = self.get_carga()
+        tiempo_restante = (carga / 100) * self.tiempo_total
+        return round(tiempo_restante)
+
+    # Por favor sirve
     def get_status(self):
-        return True, [self.get_carga(), self.get_cargando()]
+        return True, [self.get_carga(), self.get_cargando(), self.get_tiempo_restante()]
