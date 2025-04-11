@@ -1,3 +1,5 @@
+import subprocess
+
 import uvicorn as uv
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -16,32 +18,81 @@ app = FastAPI()
 # }
 @app.get("/shutdown")
 async def shutdown():
-    estado, mensaje = ControladorSistema.apagar_sistema()
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
+    try:
+        # Simulación de error de permisos
+        raise PermissionError("No tienes permisos suficientes para apagar el sistema.")
+
+        # Simulación de comando no encontrado
+        # raise FileNotFoundError("El comando para apagar el sistema no se encontró.")
+
+        # Simulación de apagado exitoso
+        estado = True
+        mensaje = "Apagando el módulo Eddy..."
+        if estado:
+            return {
+                "status": "success",
+                "message": mensaje
+            }
+        else:
+            return {
+                "status": "error",
+                "message": mensaje
+            }
+
+    except PermissionError as e:
         return {
             "status": "error",
-            "message": mensaje
+            "message": f"Error de permisos, {str(e)}"
         }
-    
+    except FileNotFoundError as e:
+        return {
+            "status": "error",
+            "message": f"Error de comando: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
+        }
 # Endpoint to reboot the raspberry pi
 # TODO
 @app.get("/reboot")
 async def reboot():
-    estado, mensaje = ControladorSistema.reiniciar_sistema()
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
+    try:
+        # Simulación de error de permisos
+        raise PermissionError("No tienes permisos suficientes para reiniciar el sistema.")
+
+        # Simulación de comando no encontrado
+        # raise FileNotFoundError("El comando para reiniciar el sistema no se encontró.")
+
+        # Simulación de reinicio exitoso
+        estado = True
+        mensaje = "Módulo Eddy reiniciado exitosamente, espere un momento..."
+        if estado:
+            return {
+                "status": "success",
+                "message": mensaje
+            }
+        else:
+            return {
+                "status": "error",
+                "message": mensaje
+            }
+
+    except PermissionError as e:
         return {
             "status": "error",
-            "message": mensaje
+            "message": f"Error de permisos, {str(e)}"
+        }
+    except FileNotFoundError as e:
+        return {
+            "status": "error",
+            "message": f"Error de comando: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
         }
 
 '''Para manejar las conexiones wifi'''
@@ -54,19 +105,45 @@ async def reboot():
 # }
 @app.get("/wifi-scan")
 async def wifi_scan():
-    modulo_red = ModuloRed(modo_conexion="wifi")
-    estado, response = modulo_red.escanear_redes_wifi()
-    if estado:
-        return {
-            "status": "success",
-            "networks": response
-        }
-    else:
+    try:
+        # Simulación de error al ejecutar el comando
+        # raise subprocess.CalledProcessError(1, "nmcli", "No se pudo ejecutar el comando nmcli, verifica que estes en el modo Wi-Fi.")
+
+        # Simulación de error de permisos
+        # raise PermissionError("No tienes permisos suficientes para escanear redes Wi-Fi.")
+
+        # Simulación de escaneo exitoso
+        estado = True
+        response = [
+            {"ssid": "INFINITUM0962", "signal": "90", "security": "WPA2", "known": True},
+            {"ssid": "INFINITUM6EAE", "signal": "80", "security": "WPA3", "known": False}
+        ]
+        if estado:
+            return {
+                "status": "success",
+                "networks": response
+            }
+        else:
+            return {
+                "status": "error",
+                "message": response
+            }
+
+    except subprocess.CalledProcessError as e:
         return {
             "status": "error",
-            "message": response
+            "message": f"{e.output}"
         }
-
+    except PermissionError as e:
+        return {
+            "status": "error",
+            "message": f"Error de permisos: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
+        }
 
 # Endpoint to list the EXISTING Wi-Fi networks saved in
 # Eddy module
@@ -86,30 +163,64 @@ class NetworkIdRequest(BaseModel):
 
 # Endpoint para conectarse a una red Wi-Fi existente de acuerdo al ID de red
 @app.put("/connect-network")
-# response form:
-# # {
-# #   "status": "success" | "error",
-# #   "message": "connection successful" | "Error message"
-# # }
 async def connect_network(request: NetworkIdRequest):
-    modulo_red = ModuloRed(modo_conexion="wifi")
-    ssid = request.ssid
-    estado, mensaje = modulo_red.conectar_red_wifi_conocida(ssid)
-    if estado:
-        return {"status": "success", "message": mensaje}
-    else:
-        return {"status": "error", "message": mensaje}
+    try:
+        # Simulación de error al ejecutar el comando
+        raise subprocess.CalledProcessError(1, "wpa_cli", "Error al ejecutar el comando wpa_cli.")
+
+        # Simulación de error de permisos
+        # raise PermissionError("No tienes permisos suficientes para conectarte a la red Wi-Fi.")
+
+        # Simulación de conexión exitosa
+        estado = True
+        mensaje = "Conexión exitosa a la red Wi-Fi."
+        if estado:
+            return {"status": "success", "message": mensaje}
+        else:
+            return {"status": "error", "message": mensaje}
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "status": "error",
+            "message": f"Error al ejecutar el comando: {e.cmd}. Activa el modo Wi-Fi."
+        }
+    except PermissionError as e:
+        return {
+            "status": "error",
+            "message": f"Error de permisos: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
+        }
 
 
 @app.put("/open-wifi")
 async def open_wifi(request: NetworkIdRequest):
-    modulo_red = ModuloRed(modo_conexion="wifi")
-    ssid = request.ssid
-    estado, mensaje = modulo_red.conectar_red_wifi_abierta(ssid)
-    if estado:
-        return {"status": "success", "message": mensaje}
-    else:
-        return {"status": "error", "message": mensaje}
+    try:
+        # Simulación de error al agregar la red
+        raise subprocess.CalledProcessError(1, "wpa_cli", "Error al agregar la red Wi-Fi abierta.")
+
+        # Simulación de conexión exitosa
+        modulo_red = ModuloRed(modo_conexion="wifi")
+        ssid = request.ssid
+        estado, mensaje = modulo_red.conectar_red_wifi_abierta(ssid)
+        if estado:
+            return {"status": "success", "message": mensaje}
+        else:
+            return {"status": "error", "message": mensaje}
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "status": "error",
+            "message": f"Error al ejecutar el comando: {e.cmd}"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
+        }
 
 
 class WifiConnectionRequest(BaseModel):
@@ -122,16 +233,32 @@ class WifiConnectionRequest(BaseModel):
 #   "status": "success" | "error",
 #   "message": "Connection successful" | "Error message"
 # }
-@app.post("/wifi-connection") #Para conexiones nuevas
+@app.post("/wifi-connection")
 async def wifi_connection(request: WifiConnectionRequest):
-    modulo_red = ModuloRed(modo_conexion="wifi")
-    ssid = request.ssid
-    password = request.password
-    estado, mensaje = modulo_red.conectar_red_wifi(ssid, password)
-    if estado:
-        return {"status": "success", "message": mensaje}
-    else:
-        return {"status": "error", "message": mensaje}
+    try:
+        # Simulación de error: la interfaz de red no está disponible
+        raise subprocess.CalledProcessError(1, "wpa_cli", "La interfaz wlan1 no está disponible o no está activa")
+
+        # Simulación de conexión exitosa
+        modulo_red = ModuloRed(modo_conexion="wifi")
+        ssid = request.ssid
+        password = request.password
+        estado, mensaje = modulo_red.conectar_red_wifi(ssid, password)
+        if estado:
+            return {"status": "success", "message": mensaje}
+        else:
+            return {"status": "error", "message": mensaje}
+
+    except subprocess.CalledProcessError as e:
+        return {
+            "status": "error",
+            "message": f"Error de interfaz: {e.output}, activa el modo Wi-Fi."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
+        }
 
 
 @app.get("/connetion-status")
@@ -144,7 +271,6 @@ async def connection_status(request: NetworkIdRequest):
     else:
         return {"status": "error", "message": mensaje}
 
-# Definir un modelo Pydantic para recibir el parámetro como JSON
 class NetworkRequest(BaseModel):
     network_id: str
 
@@ -185,18 +311,36 @@ async def access_point_info():
 # }
 @app.get("/connected-clients")
 async def connected_clients_info():
-    # Crear el objeto de ModuloRed y llamar al método ejecutar_curl
-    estado, response = ModuloRed.obtener_clientes_conectados()
-    
-    if estado:
-        return {
-            "status": "success",
-            "clients": response
-        }
-    else:
+    try:
+        # Simulación de error al ejecutar el comando curl
+        # raise subprocess.CalledProcessError(1, "curl", "No se pudo obtener la lista de clientes conectados. Verifica que el servicio esté activo y accesible.")
+
+        # Simulación de respuesta exitosa
+        estado = True
+        response = [
+
+        ]
+
+        if estado:
+            return {
+                "status": "success",
+                "clients": response
+            }
+        else:
+            return {
+                "status": "error",
+                "message": response
+            }
+
+    except subprocess.CalledProcessError as e:
         return {
             "status": "error",
-            "message": response
+            "message": str(e)
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
         }
 
 
@@ -210,20 +354,40 @@ class HotspotConfiguration(BaseModel):
 #   "status": "success" | "error",
 #   ""message": "Hotspot actualizado" | "Error message"
 # }
-@app.put("/update-hostapd-configuration")
+@app.put("/hotspot-configuration")
 async def update_hostapd_configuration(config: HotspotConfiguration):
-    ssid = config.ssid
-    wpa_passphrase = config.password
-    estado, mensaje = ModuloRed.editar_hostapd(ssid, wpa_passphrase)
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
+    try:
+        # Simulación de error al editar el archivo de configuración
+        raise FileNotFoundError("El archivo de configuración hostapd.conf no se encuentra. Verifica que el archivo exista en la ruta esperada.")
+
+        # Simulación de actualización exitosa
+        estado = True
+        mensaje = "Hotspot actualizado exitosamente"
+        if estado:
+            return {
+                "status": "success",
+                "message": mensaje
+            }
+        else:
+            return {
+                "status": "error",
+                "message": mensaje
+            }
+
+    except FileNotFoundError as e:
         return {
             "status": "error",
-            "message": mensaje
+            "message": f"Error de archivo, {str(e)}"
+        }
+    except PermissionError as e:
+        return {
+            "status": "error",
+            "message": f"Error de permisos: {str(e)}. Asegúrate de tener los permisos necesarios para modificar el archivo."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
         }
     
 '''Para manejar el módem GSM'''
@@ -241,16 +405,38 @@ class APNConfiguration(BaseModel):
 # }
 @app.put("/apn-configuration")
 async def apn_configuration(config: APNConfiguration):
-    estado, mensaje = ModuloRed.editar_wvdial(config.apn, config.username, config.password)
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
+    try:
+        # Simulación de error al editar el archivo wvdial.conf
+        raise FileNotFoundError("El archivo wvdial.conf no se encuentra. Verifica que el archivo exista en la ruta esperada: /etc/wvdial.conf.")
+
+        # Simulación de actualización exitosa
+        estado = True
+        mensaje = "Configuración APN actualizada exitosamente"
+        if estado:
+            return {
+                "status": "success",
+                "message": mensaje
+            }
+        else:
+            return {
+                "status": "error",
+                "message": mensaje
+            }
+
+    except FileNotFoundError as e:
         return {
             "status": "error",
-            "message": mensaje
+            "message": f"Error de archivo, {str(e)}. Asegúrate de que el archivo wvdial.conf esté presente y tenga los permisos adecuados."
+        }
+    except PermissionError as e:
+        return {
+            "status": "error",
+            "message": f"Error de permisos: {str(e)}. Asegúrate de tener permisos de escritura en el archivo wvdial.conf."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}. Verifica la configuración del sistema."
         }
     
 # endpoint to update the connection mode (mobile or Wi-Fi)
@@ -261,16 +447,38 @@ async def apn_configuration(config: APNConfiguration):
 # }
 @app.put("/toggle-ppp-connection")
 async def toggle_ppp_connection():
-    estado, mensaje = ModuloRed.toggle_ppp_connection()
-    if estado:
-        return {
-            "status": "success",
-            "message": mensaje
-        }
-    else:
+    try:
+        # Simulación de error al alternar la conexión
+        raise subprocess.CalledProcessError(1, "pgrep", "No se pudo verificar el estado de wvdial. Verifica que la antena este instalada y configurada correctamente.")
+
+        # Simulación de alternancia exitosa
+        estado = True
+        mensaje = "Modo de conexión actualizado a: Mobile"
+        if estado:
+            return {
+                "status": "success",
+                "message": mensaje
+            }
+        else:
+            return {
+                "status": "error",
+                "message": mensaje
+            }
+
+    except subprocess.CalledProcessError as e:
         return {
             "status": "error",
-            "message": mensaje
+            "message": f"{e.output}"
+        }
+    except PermissionError as e:
+        return {
+            "status": "error",
+            "message": f"Error de permisos: {str(e)}. Asegúrate de tener permisos suficientes para alternar la conexión."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}. Verifica la configuración del sistema."
         }
 
 # Endpoint para consultar la intensidad de señal
@@ -297,20 +505,44 @@ async def check_network_status():
     return {"estado": estado, "mensaje": mensaje}
 
 # Endpoint for getting the battery status
+# response form:
+# {
+#   "status": "success" | "error",
+#   "charge": 50,
+#   "charging": false,
+#   "remaining_time": 30
+# }
 @app.get("/battery-status")
 async def battery_status():
-    bateria = BateriaModulo()
-    estado, message = bateria.get_status()
-    if estado:
-        return {
-            "status": "success",
-            "charge": message[0],
-            "charging": message[1]
-        }
-    else:
+    try:
+        # Simulación de error al obtener el estado de la batería
+        raise FileNotFoundError("No se pudo acceder a la información de la batería. Verifica que el módulo esté correctamente conectado.")
+
+        # Simulación de respuesta exitosa
+        bateria = BateriaModulo()
+        estado, message = bateria.get_status()
+        if estado:
+            return {
+                "status": "success",
+                "charge": message[0],
+                "charging": message[1],
+                "remaining_time": message[2]
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "No se pudo obtener el estado de la batería."
+            }
+
+    except FileNotFoundError as e:
         return {
             "status": "error",
-            "message": message
+            "message": f"Error de archivo, {str(e)}."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error inesperado: {str(e)}"
         }
 
 # Endpoint to get the principal data of the system
@@ -331,25 +563,38 @@ async def battery_status():
 @app.get("/general-status")
 def general_status():
     try:
-        estado_red, mensaje_red = ModuloRed.obtener_estado_redes()
+        # Simulación de error al obtener el estado de la red
+        raise FileNotFoundError("No se pudo obtener el estado de la red. Verifica que estes conectado a la red del módulo.")
+
+        # Simulación de estado de red exitoso
+        estado_red = True
+        mensaje_red = "Wi-Fi"  # Simulando que la red es Wi-Fi
 
         if not estado_red:
             return {"status": "error", "message": mensaje_red}
 
         if mensaje_red == "Wi-Fi":
-            status, signal_info = ModuloRed.get_wlan_signal_strength()
+            # Simulación de señal Wi-Fi
+            status = True
+            signal_info = {
+                "ESSID": "INFINITUM0962",
+                "Signal Level": 90
+            }
             connection_mode = "Wi-Fi"
         else:
-            sim_data = ModuloRed.get_sim7600_signal_strength()
+            # Simulación de señal móvil
             signal_info = {
-                "ESSID": sim_data["data"]["carrier"],
-                "Signal Level": sim_data["data"]["signal_strength"]
+                "ESSID": "internet.itelcel.com",
+                "Signal Level": 80
             }
             connection_mode = "Mobile"
-            status = True  # Se define status para evitar el error
+            status = True
 
         if not status:
             return {"status": "error", "message": signal_info}
+
+        # Simulación de nivel de batería
+        battery_level = 50
 
         response = {
             "status": "success",
@@ -359,14 +604,16 @@ def general_status():
                     "name": signal_info["ESSID"],
                     "signal": signal_info["Signal Level"]
                 },
-                "battery_level": 75  # Valor fijo para ahora
+                "battery_level": battery_level
             }
         }
 
         return response
 
+    except FileNotFoundError as e:
+        return {"status": "error", "message": f"{str(e)}"}
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"Error inesperado: {str(e)}"}
 
 if __name__ == "__main__":
     uv.run(app, host = "0.0.0.0", port = 8000)
