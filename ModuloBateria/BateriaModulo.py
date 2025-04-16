@@ -16,7 +16,7 @@ class BateriaModulo:
         self.mcp = MCP.MCP3008(self.spi, self.cs) # MCP3008 object
 
     def get_carga(self):
-        chan = AnalogIn(self.mcp, MCP.P0)
+        chan = AnalogIn(self.mcp, MCP.P0, MCP.P1)
         voltage = chan.voltage
 
         # Calculate the battery percentage based on the voltage
