@@ -14,6 +14,11 @@ class BateriaModulo:
         self.spi = busio.SPI(board.SCK, board.MOSI, board.MISO) # SPI bus
         self.cs = digitalio.DigitalInOut(board.D5) # Chip select
         self.mcp = MCP.MCP3008(self.spi, self.cs) # MCP3008 object
+        if self.spi.try_lock():
+            print("SPI locked")
+            self.spi.unlock()
+        else:
+            print("[ERROR] SPI could not be locked. Check if another process is using it.")
 
     def get_carga(self):
         chan = AnalogIn(self.mcp, MCP.P0, MCP.P1)
