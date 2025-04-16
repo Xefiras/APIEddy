@@ -359,6 +359,8 @@ def general_status():
         if not status:
             return {"status": "error", "message": signal_info}
 
+        bateria = BateriaModulo()
+
         response = {
             "status": "success",
             "data": {
@@ -367,7 +369,7 @@ def general_status():
                     "name": signal_info["ESSID"],
                     "signal": signal_info["Signal Level"]
                 },
-                "battery_level": 75  # Valor fijo para ahora
+                "battery_level": bateria.get_carga()  # Valor fijo para ahora
             }
         }
 
