@@ -21,7 +21,7 @@ class BateriaModulo:
             print("[ERROR] SPI could not be locked. Check if another process is using it.")
 
     def get_carga(self):
-        chan = AnalogIn(self.mcp, MCP.P0, MCP.P1)
+        chan = AnalogIn(self.mcp, MCP.P0)
         print("chan:", chan)
         voltage = chan.voltage
         print("voltage:", voltage)
