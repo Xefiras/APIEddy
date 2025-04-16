@@ -6,8 +6,8 @@ import adafruit_mcp3xxx.mcp3008 as MCP
 
 
 class BateriaModulo:
-    MIN_VOLTAGE = 3.0  # TODO Preguntarle a Pao los valores reales
-    MAX_VOLTAGE = 4.2
+    MIN_VOLTAGE = 11.0
+    MAX_VOLTAGE = 16.8
     tiempo_total = 60 * 3 # 3 horas en minutos
 
     def __init__(self):
