@@ -39,9 +39,6 @@ class BateriaModulo:
 
         print("pin cargando value:", pin_cargando.value)
 
-
-
-
         return pin_cargando.value # True cargando || False no
 
     def get_tiempo_restante(self):
@@ -80,5 +77,7 @@ class BateriaModulo:
 
         print(f"SPI is locked? {self.spi.try_lock()}")
         self.spi.unlock()
+
+        self.debug()
 
         return True, [self.get_carga(), self.get_cargando(), self.get_tiempo_restante()]
