@@ -17,29 +17,29 @@ class BateriaModulo:
 
     def get_carga(self):
         chan = AnalogIn(self.mcp, MCP.P0, MCP.P1)
-        print(chan)
+        print("chan:", chan)
         voltage = chan.voltage
-        print(voltage)
+        print("voltage:", voltage)
 
         # Calculate the battery percentage based on the voltage
         carga = max(0, min(100, int(( (voltage - self.MIN_VOLTAGE) / (self.MAX_VOLTAGE - self.MIN_VOLTAGE)) * 100 )))
-        print(carga)
+        print("carga:", carga)
         return round(carga)
 
     def get_cargando(self):
         pin_cargando = digitalio.DigitalInOut(board.D6)
-        print(pin_cargando)
+        print("pin_cargando:", pin_cargando)
         pin_cargando.direction = digitalio.Direction.INPUT
-        print(pin_cargando)
+        print("pin_cargando direction:", pin_cargando.direction)
 
-        print(pin_cargando.value)
+        print("pin cargando value:", pin_cargando.value)
         return pin_cargando.value # True cargando || False no
 
     def get_tiempo_restante(self):
         carga = self.get_carga()
-        print(carga)
+        print("carga:", carga)
         tiempo_restante = (carga / 100) * self.tiempo_total
-        print(tiempo_restante)
+        print("tiempo restante:", tiempo_restante)
         return round(tiempo_restante)
 
     # Por favor sirve
