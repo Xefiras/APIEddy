@@ -334,7 +334,8 @@ async def battery_status():
 #           "name": "network_name",
 #           "signal": 70
 #       },
-#       "battery_level": 50
+#       "battery_level": 50,
+#       "battery_charging": true
 #   }
 @app.get("/general-status")
 def general_status():
@@ -369,10 +370,10 @@ def general_status():
                     "name": signal_info["ESSID"],
                     "signal": signal_info["Signal Level"]
                 },
-                "battery_level": bateria.get_carga()  # Valor fijo para ahora
+                "battery_level": bateria.get_carga(),
+                "battery_charging": bateria.get_cargando()
             }
         }
-
         return response
 
     except Exception as e:
