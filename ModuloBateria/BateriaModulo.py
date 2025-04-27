@@ -15,7 +15,7 @@ class BateriaModulo:
         self.mcp = MCP3008(self.spi, self.cs) # MCP3008 object
 
         self.last_voltage = None
-        self.isCharging = False
+        self.is_charging = False
 
     def leer_promedio(self, chan, iter=10):
         sum = 0
@@ -30,7 +30,7 @@ class BateriaModulo:
         median_value = self.leer_promedio(chan, 10)
         # Calculo de carga
         carga0 = (median_value / self.MAX_VAL_ADC) * self.VREF
-        carga = (chan.value) * (self.VREF / self.MAX_VAL_ADC)
+        carga = chan.value * (self.VREF / self.MAX_VAL_ADC)
         print(f"Valor digital promedio: {int(median_value)} | Voltaje: {carga0:.2f} V")
         # porcentaje
         carga0 = (carga / self.VREF) * 100
