@@ -32,14 +32,12 @@ class BateriaModulo:
         carga0 = (median_value / self.MAX_VAL_ADC) * self.VREF
         carga = chan.value * (self.VREF / self.MAX_VAL_ADC)
         print(f"Valor digital promedio: {int(median_value)} | Voltaje: {carga0:.2f} V")
-        # porcentaje
         carga0 = (carga / self.VREF) * 100
         return carga0
 
     def get_cargando(self):
-        # Leer el canal analógico
         chan = AnalogIn(self.mcp, 0)
-        current_voltage = self.leer_promedio(chan, 10)  # Promedio del voltaje actual
+        current_voltage = self.leer_promedio(chan, 10)
 
         if self.last_voltage is not None:
             # Detectar si el voltaje sube o baja bruscamente
