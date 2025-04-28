@@ -14,8 +14,12 @@ class BateriaModulo:
         self.cs = digitalio.DigitalInOut(board.CE0) # Chip select
         self.mcp = MCP3008(self.spi, self.cs) # MCP3008 object
 
-        self.last_voltage = None
-        self.is_charging = False
+        # Variables para detectar carga
+        self.voltage_history = []
+        self.history_size = 10  # Número de lecturas a promediar para detectar tendencia
+        self.charging_threshold = 0.4  # Umbral de aumento de voltaje para considerar carga
+        self.discharging_threshold = -0.4 # Umbral de disminución de voltaje para considerar descarga
+        self.is_charging = False # Estado inicial
 
     def leer_promedio(self, chan, iter=10):
         sum = 0
@@ -36,18 +40,33 @@ class BateriaModulo:
         return carga0
 
     def get_cargando(self):
-        chan = AnalogIn(self.mcp, 0)
-        current_voltage = self.leer_promedio(chan, 10)
+        chan = AnalogIn(self.mcp, 0) # Asume canal 0 para el voltaje de la batería
+        current_avg_voltage = self.leer_promedio(chan, 10) # Obtiene voltaje promediado
 
-        if self.last_voltage is not None:
-            # Detectar si el voltaje sube o baja bruscamente
-            if current_voltage - self.last_voltage >= 0.4:
-                self.is_charging = True  # Comienza a cargar
-            elif self.last_voltage - current_voltage >= 0.4:
-                self.is_charging = False  # Deja de cargar
+        # Añade el voltaje actual al historial
+        self.voltage_history.append(current_avg_voltage)
 
-        # Actualizar el último voltaje leído
-        self.last_voltage = current_voltage
+        # Mantiene el tamaño del historial
+        if len(self.voltage_history) > self.history_size:
+            self.voltage_history.pop(0) # Elimina la lectura más antigua
+
+        # Necesita suficiente historial para determinar la tendencia
+        if len(self.voltage_history) < self.history_size:
+            # Aún no hay suficientes datos, devuelve el estado anterior
+            # o False si prefieres un estado inicial definido
+            return self.is_charging
+
+        # Calcula el cambio de voltaje entre la lectura más reciente y la más antigua del historial
+        voltage_change = self.voltage_history[-1] - self.voltage_history[0]
+
+        # Determina el estado de carga basado en la tendencia del voltaje
+        if voltage_change > self.charging_threshold:
+            self.is_charging = True
+        elif voltage_change < self.discharging_threshold:
+            self.is_charging = False
+        # Opcional: Si el cambio está entre los umbrales, mantiene el estado actual
+        # else:
+        #    pass # self.is_charging no cambia
 
         return self.is_charging
 
